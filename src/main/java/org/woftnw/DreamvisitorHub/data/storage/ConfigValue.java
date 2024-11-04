@@ -18,7 +18,8 @@ public class ConfigValue {
         CHAR,
         LOCATION,
         CHANNEL,
-        ROLE
+        ROLE,
+        CATEGORY
     }
 
     public ConfigValue(String name, String displayName, String description, Object defaultValue, Type type) {
