@@ -1,32 +1,41 @@
 package org.woftnw.DreamvisitorHub.data.storage;
 
-public class ConfigValue {
+public class ConfigValue<E> {
 
-    private String name;
-    private String displayName;
-    private String description;
-    private Object defaultValue;
-    private Type type;
+    private final String name;
+    private final String displayName;
+    private final String description;
+    private final E defaultValue;
+    private E value;
 
-    public enum Type {
-        BOOLEAN,
-        INT,
-        DOUBLE,
-        FLOAT,
-        LONG,
-        STRING,
-        CHAR,
-        LOCATION,
-        CHANNEL,
-        ROLE,
-        CATEGORY
+    public ConfigValue(String name, String displayName, String description, E defaultValue) {
+        this.name = name;
+        this.displayName = displayName;
+        this.description = description;
+        this.defaultValue = defaultValue;
     }
 
-    public ConfigValue(String name, String displayName, String description, Object defaultValue, Type type) {
-        this.name = name;
-        this.description = description;
-        this.displayName = displayName;
-        this.defaultValue = defaultValue;
-        this.type = type;
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public E getDefaultValue() {
+        return defaultValue;
+    }
+
+    public E getValue() {
+        return value;
+    }
+
+    public void setValue(E value) {
+        this.value = value;
     }
 }
