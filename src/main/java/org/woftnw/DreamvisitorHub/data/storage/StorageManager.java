@@ -3,6 +3,7 @@ package org.woftnw.DreamvisitorHub.data.storage;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.woftnw.DreamvisitorHub.data.functions.Infraction;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
@@ -10,153 +11,10 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class StorageManager {
-
-//    private static final List<UnifiedStorage> unifiedStorages = Arrays.asList(
-//            new UnifiedStorage("config",
-//                    new ConfigValue<>(
-//                            "debug",
-//                            "Debug Mode",
-//                            "Whether to enable debug messages. This will send additional messages to help debug Dreamvisitor. Disabled by default.",
-//                            false
-//                    ),
-//                    new ConfigValue<>(
-//                            "pauseChat",
-//                            "Pause Chat",
-//                            "Whether chat is paused or not. This can be toggled in Minecraft with /pausechat. Disabled by default.",
-//                            false
-//                    ),
-//                    new ConfigValue<>(
-//                            "softWhitelist",
-//                            "Soft Whitelist",
-//                            "Whether the soft whitelist is enabled or not. This can be set in Minecraft with /softwhitelist [on|off]. Disabled by default.",
-//                            false
-//                    ),
-//                    new ConfigValue<>(
-//                            "disablePvp",
-//                            "Disable PvP",
-//                            "Whether to globally disable pvp or not. This can be toggled in Minecraft with /togglepvp.",
-//                            false
-//                    ),
-//                    new ConfigValue<>(
-//                            "playerLimit",
-//                            "Player Limit Override",
-//                            "Player limit override. This will override the player limit, both over and under. This can be set in Minecraft with /playerlimit <int>",
-//                            -1
-//                    ),
-//                    new ConfigValue<>(
-//                            "resourcePackRepo",
-//                            "Resource Pack Repository",
-//                            "The repository path of the server resource pack. Dreamvisitor will pull the first artifact from the latest release on pack update.",
-//                            "WOFTNW/Dragonspeak"
-//                    ),
-//                    new ConfigValue<Location>(
-//                            "hubLocation",
-//                            "Hub Location",
-//                            "The location of the hub.",
-//                            null
-//                    ),
-//                    new ConfigValue<String>(
-//                            "botToken",
-//                            "Bot Token",
-//                            "The Dreamvisitor bot token. DO NOT SHARE THIS. Dreamvisitor will not work properly unless this is a valid bot token. Ask Bog for a bot token if Dreamvisitor reports a login error on startup.",
-//                            null
-//                    ),
-//                    new ConfigValue<Long>(
-//                            "whitelistChannel",
-//                            "Whitelist Channel",
-//                            "The channel of the whitelist chat. This can be set on Discord with /setwhitelist.",
-//                            null
-//                    ),
-//                    new ConfigValue<Long>(
-//                            "gameChatChannel",
-//                            "Game Chat Channel",
-//                            "The channel of the game chat. This can be set on Discord with /setgamechat.",
-//                            null
-//                    ),
-//                    new ConfigValue<Long>(
-//                            "logChannel",
-//                            "Log Channel",
-//                            "The channel of the log chat. This can be set on Discord with /setlogchat.",
-//                            null
-//                    ),
-//                    new ConfigValue<>(
-//                            "enableLogConsoleCommands",
-//                            "Enable Log Console Commands",
-//                            "Whether to pass messages in the log channel as console commands. If log-console is enabled, this will take messages sent by users with the Discord administrator permission and pass them as console commands.",
-//                            true
-//                    ),
-//                    new ConfigValue<>(
-//                            "webWhitelistEnabled",
-//                            "Web Whitelist",
-//                            "Whether web whitelisting is enabled or not. This can be set with the /toggleweb Discord command. Enabled by default.",
-//                            true
-//                    ),
-//                    new ConfigValue<>(
-//                            "websiteUrl",
-//                            "Website URL",
-//                            "The URL for the whitelisting website. Used to restrict requests not from the specified website to prevent abuse.",
-//                            "https://woftnw.org"
-//                    ),
-//                    new ConfigValue<>(
-//                            "infractionExpireTimeDays",
-//                            "Infraction Expire Time",
-//                            "The amount of time in days (as an integer) that infractions take to expire. Expired infractions are not deleted, but they do not count toward a total infraction count.",
-//                            90
-//                    ),
-//                    new ConfigValue<Long>(
-//                            "infractionsCategory",
-//                            "Infractions Category",
-//                            "The ID of the category to create infractions channels. They will accumulate here.",
-//                            null
-//                    ),
-//                    new ConfigValue<>(
-//                            "shopName",
-//                            "Shop Name",
-//                            "The name of the Discord shop. This will appear at the top of the embed.",
-//                            "Shop"
-//                    ),
-//                    new ConfigValue<>(
-//                            "currencyIcon",
-//                            "Currency Icon",
-//                            "The icon used for currency in the Discord economy system. This can be any string, including symbols, letters, emojis, and Discord custom emoji.",
-//                            "$"
-//                    ),
-//                    new ConfigValue<>(
-//                            "dailyBaseAmount",
-//                            "Daily Base Amount",
-//                            "The base amount given by the /daily Discord command. This is the default amount before adding the streak bonus. The total amount is decided by dailyBaseAmount + (user streak * this).",
-//                            10.00
-//                    ),
-//                    new ConfigValue<>(
-//                            "dailyStreakMultiplier",
-//                            "Daily Streak Multiplier",
-//                            "The multiplier of the streak bonus given by the /daily command. This is multiplied by the streak and added to the base amount. The total amount is decided by dailyBaseAmount + (users streak * this).",
-//                            5.00
-//                    ),
-//                    new ConfigValue<>(
-//                            "workReward",
-//                            "Work Reward",
-//                            "The amount gained from the /work command. /work can only be run every hour.",
-//                            20.00
-//                    ),
-//                    new ConfigValue<>(
-//                            "mailDeliveryLocationSelectionDistanceWeightMultiplier",
-//                            "Mail Delivery Location Selection Distance Weight Multiplier",
-//                            "The multiplier of the distance weight when choosing mail delivery locations. Takes the ratio (between 0 and 1) of the distance to the maximum distance between locations, multiplies it by this value, and adds it to the mail location weight. This weight is used to randomly choose a mail location to deliver to provide a realistic relationship between delivery locations. At 0, distance has no effect on location selection. At 1, the weight will have a slight effect on the location selection. At 10, the weight will have a significant effect on the location selection. The weight is applied inversely, making closer distances worth more than further distances.",
-//                            1.00
-//                    ),
-//                    new ConfigValue<>(
-//                            "mailDistanceToRewardMultiplier",
-//                            "Mail Distance To Reward Multiplier",
-//                            "Mail delivery reward is calculated by multiplying the distance by this number. The result is then rounded to the nearest ten. At 0, the reward given is 0. At 1, the reward given will be the distance in blocks.",
-//                            0.05
-//                    )
-//
-//            )
-//    );
 
     private static boolean debug = false;
     private static boolean pauseChat = false;
@@ -180,36 +38,47 @@ public class StorageManager {
     private static double workReward = 20.00;
     private static double mailDeliveryLocationSelectionDistanceWeightMultiplier = 1.00;
     private static double mailDistanceToRewardMultiplier = 0.05;
+    private static int consoleSize = 512;
 
+    private static final String CONFIG = "config";
+    private static final String INFRACTIONS = "infractions";
 
-    public static void loadFromFile(String storageName) throws FileNotFoundException {
+    public static void loadFromFile(@NotNull String storageName) throws FileNotFoundException {
 
         Yaml yaml = new Yaml();
-        InputStream inputStream = new FileInputStream("config.yml");
+        InputStream inputStream = new FileInputStream(storageName + ".yml");
         Map<String, Object> fileData = yaml.load(inputStream);
 
-        debug = (boolean) fileData.get("debug");
-        pauseChat = (boolean) fileData.get("pauseChat");
-        softWhitelist = (boolean) fileData.get("softWhitelist");
-        disablePvP = (boolean) fileData.get("disablePvP");
-        playerLimit = (int) fileData.get("playerLimit");
-        resourcePackRepo = (String) fileData.get("resourcePackRepo");
-        hubLocation = (Location) fileData.get("hubLocation");
-        botToken = (String) fileData.get("botToken");
-        whitelistChannel = (Long) fileData.get("whitelistChannel");
-        gameChatChannel = (Long) fileData.get("gameChatChannel");
-        gameLogChannel = (Long) fileData.get("gameLogChannel");
-        enableLogConsoleCommands = (boolean) fileData.get("enableLogConsoleCommands");
-        webWhitelistEnabled = (boolean) fileData.get("webWhitelistEnabled");
-        websiteUrl = (String) fileData.get("websiteUrl");
-        infractionExpireTimeDays = (int) fileData.get("infractionExpireTimeDays");
-        infractionsCategory = (Long) fileData.get("infractionsCategory");
-        shopName = (String) fileData.get("shopName");
-        currencyIcon = (String) fileData.get("currencyIcon");
-        dailyStreakMultiplier = (double) fileData.get("dailyStreakMultiplier");
-        workReward = (double) fileData.get("workReward");
-        mailDeliveryLocationSelectionDistanceWeightMultiplier = (double) fileData.get("mailDeliveryLocationSelectionDistanceWeightMultiplier");
-        mailDistanceToRewardMultiplier = (double) fileData.get("mailDistanceToRewardMultiplier");
+        if (storageName.equals(CONFIG)) {
+            debug = (boolean) fileData.get("debug");
+            pauseChat = (boolean) fileData.get("pauseChat");
+            softWhitelist = (boolean) fileData.get("softWhitelist");
+            disablePvP = (boolean) fileData.get("disablePvP");
+            playerLimit = (int) fileData.get("playerLimit");
+            resourcePackRepo = (String) fileData.get("resourcePackRepo");
+            hubLocation = (Location) fileData.get("hubLocation");
+            botToken = (String) fileData.get("botToken");
+            whitelistChannel = (Long) fileData.get("whitelistChannel");
+            gameChatChannel = (Long) fileData.get("gameChatChannel");
+            gameLogChannel = (Long) fileData.get("gameLogChannel");
+            enableLogConsoleCommands = (boolean) fileData.get("enableLogConsoleCommands");
+            webWhitelistEnabled = (boolean) fileData.get("webWhitelistEnabled");
+            websiteUrl = (String) fileData.get("websiteUrl");
+            infractionExpireTimeDays = (int) fileData.get("infractionExpireTimeDays");
+            infractionsCategory = (Long) fileData.get("infractionsCategory");
+            shopName = (String) fileData.get("shopName");
+            currencyIcon = (String) fileData.get("currencyIcon");
+            dailyStreakMultiplier = (double) fileData.get("dailyStreakMultiplier");
+            workReward = (double) fileData.get("workReward");
+            mailDeliveryLocationSelectionDistanceWeightMultiplier = (double) fileData.get("mailDeliveryLocationSelectionDistanceWeightMultiplier");
+            mailDistanceToRewardMultiplier = (double) fileData.get("mailDistanceToRewardMultiplier");
+            consoleSize = (int) fileData.get("consoleSize");
+        } else if (storageName.equals(INFRACTIONS)) {
+            List<Map<String, Object>> yamlInfractions = (List<Map<String, Object>>) fileData.get("infractions");
+            for (Map<String, Object> yamlInfraction : yamlInfractions) {
+                Infraction infraction = Infraction.deserialize(yamlInfraction);
+            }
+        }
 
     }
 
@@ -239,6 +108,7 @@ public class StorageManager {
         data.put("workReward", workReward);
         data.put("mailDeliveryLocationSelectionDistanceWeightMultiplier", mailDeliveryLocationSelectionDistanceWeightMultiplier);
         data.put("mailDistanceToRewardMultiplier", mailDistanceToRewardMultiplier);
+        data.put("consoleSize", consoleSize);
 
         Yaml yaml = new Yaml();
         PrintWriter writer = new PrintWriter("config.yml");
@@ -246,4 +116,196 @@ public class StorageManager {
         writer.close();
     }
 
+    @Nullable
+    public static String getBotToken() {
+        return botToken;
+    }
+
+    public static double getDailyStreakMultiplier() {
+        return dailyStreakMultiplier;
+    }
+
+    public static double getMailDeliveryLocationSelectionDistanceWeightMultiplier() {
+        return mailDeliveryLocationSelectionDistanceWeightMultiplier;
+    }
+
+    public static double getMailDistanceToRewardMultiplier() {
+        return mailDistanceToRewardMultiplier;
+    }
+
+    public static double getWorkReward() {
+        return workReward;
+    }
+
+    public static int getInfractionExpireTimeDays() {
+        return infractionExpireTimeDays;
+    }
+
+    public static int getPlayerLimit() {
+        return playerLimit;
+    }
+
+    @Nullable
+    public static Location getHubLocation() {
+        return hubLocation;
+    }
+
+    @Nullable
+    public static Long getGameChatChannel() {
+        return gameChatChannel;
+    }
+
+    @Nullable
+    public static Long getGameLogChannel() {
+        return gameLogChannel;
+    }
+
+    @Nullable
+    public static Long getInfractionsCategory() {
+        return infractionsCategory;
+    }
+
+    @Nullable
+    public static Long getWhitelistChannel() {
+        return whitelistChannel;
+    }
+
+    @NotNull
+    public static String getCurrencyIcon() {
+        return currencyIcon;
+    }
+
+    @Nullable
+    public static String getResourcePackRepo() {
+        return resourcePackRepo;
+    }
+
+    @NotNull
+    public static String getShopName() {
+        return shopName;
+    }
+
+    public static String getWebsiteUrl() {
+        return websiteUrl;
+    }
+
+    public static boolean isDebug() {
+        return debug;
+    }
+
+    public static boolean isDisablePvP() {
+        return disablePvP;
+    }
+
+    public static boolean isEnableLogConsoleCommands() {
+        return enableLogConsoleCommands;
+    }
+
+    public static boolean isPauseChat() {
+        return pauseChat;
+    }
+
+    public static boolean isSoftWhitelist() {
+        return softWhitelist;
+    }
+
+    public static boolean isWebWhitelistEnabled() {
+        return webWhitelistEnabled;
+    }
+
+    public static int getConsoleSize() {
+        return consoleSize;
+    }
+
+    public static void setBotToken(@Nullable String botToken) {
+        StorageManager.botToken = botToken;
+    }
+
+    public static void setCurrencyIcon(@NotNull String currencyIcon) {
+        StorageManager.currencyIcon = currencyIcon;
+    }
+
+    public static void setDailyStreakMultiplier(double dailyStreakMultiplier) {
+        StorageManager.dailyStreakMultiplier = dailyStreakMultiplier;
+    }
+
+    public static void setDebug(boolean debug) {
+        StorageManager.debug = debug;
+    }
+
+    public static void setDisablePvP(boolean disablePvP) {
+        StorageManager.disablePvP = disablePvP;
+    }
+
+    public static void setEnableLogConsoleCommands(boolean enableLogConsoleCommands) {
+        StorageManager.enableLogConsoleCommands = enableLogConsoleCommands;
+    }
+
+    public static void setGameChatChannel(@Nullable Long gameChatChannel) {
+        StorageManager.gameChatChannel = gameChatChannel;
+    }
+
+    public static void setGameLogChannel(@Nullable Long gameLogChannel) {
+        StorageManager.gameLogChannel = gameLogChannel;
+    }
+
+    public static void setHubLocation(@Nullable Location hubLocation) {
+        StorageManager.hubLocation = hubLocation;
+    }
+
+    public static void setInfractionExpireTimeDays(int infractionExpireTimeDays) {
+        StorageManager.infractionExpireTimeDays = infractionExpireTimeDays;
+    }
+
+    public static void setInfractionsCategory(@Nullable Long infractionsCategory) {
+        StorageManager.infractionsCategory = infractionsCategory;
+    }
+
+    public static void setMailDeliveryLocationSelectionDistanceWeightMultiplier(double mailDeliveryLocationSelectionDistanceWeightMultiplier) {
+        StorageManager.mailDeliveryLocationSelectionDistanceWeightMultiplier = mailDeliveryLocationSelectionDistanceWeightMultiplier;
+    }
+
+    public static void setMailDistanceToRewardMultiplier(double mailDistanceToRewardMultiplier) {
+        StorageManager.mailDistanceToRewardMultiplier = mailDistanceToRewardMultiplier;
+    }
+
+    public static void setPauseChat(boolean pauseChat) {
+        StorageManager.pauseChat = pauseChat;
+    }
+
+    public static void setPlayerLimit(int playerLimit) {
+        StorageManager.playerLimit = playerLimit;
+    }
+
+    public static void setResourcePackRepo(@Nullable String resourcePackRepo) {
+        StorageManager.resourcePackRepo = resourcePackRepo;
+    }
+
+    public static void setShopName(@NotNull String shopName) {
+        StorageManager.shopName = shopName;
+    }
+
+    public static void setSoftWhitelist(boolean softWhitelist) {
+        StorageManager.softWhitelist = softWhitelist;
+    }
+
+    public static void setWebsiteUrl(String websiteUrl) {
+        StorageManager.websiteUrl = websiteUrl;
+    }
+
+    public static void setWebWhitelistEnabled(boolean webWhitelistEnabled) {
+        StorageManager.webWhitelistEnabled = webWhitelistEnabled;
+    }
+
+    public static void setWhitelistChannel(@Nullable Long whitelistChannel) {
+        StorageManager.whitelistChannel = whitelistChannel;
+    }
+
+    public static void setWorkReward(double workReward) {
+        StorageManager.workReward = workReward;
+    }
+
+    public static void setConsoleSize(int consoleSize) {
+        StorageManager.consoleSize = consoleSize;
+    }
 }
