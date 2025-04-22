@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 public class App {
   private static final Logger logger = Logger.getLogger("DreamvisitorHub");
   private static final String CONFIG_PATH = "config.yml";
+  private static PocketBase pb;
 
   public static void main(String[] args) throws IOException {
     logger.info("Starting DreamvisitorHub...");
@@ -24,10 +25,14 @@ public class App {
     // StorageManager.loadFromFile("config");
     // Start the bot with the configuration
     Bot.startBot(config);
-    PocketBase pb = PocketBase.fromConfig(config);
-    List<JsonObject> res = pb.getFullList("users", 1, null, null, "claims", null);
-    for (JsonObject jsonObject : res) {
-      System.out.println(jsonObject.toString());
-    }
+    pb = PocketBase.fromConfig(config);
+  }
+
+  public static String getConfigPath() {
+    return CONFIG_PATH;
+  }
+
+  public static PocketBase getPb() {
+    return pb;
   }
 }

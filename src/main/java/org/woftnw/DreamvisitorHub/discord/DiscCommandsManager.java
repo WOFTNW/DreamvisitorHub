@@ -40,7 +40,7 @@ public class DiscCommandsManager extends ListenerAdapter {
     // addList.add(new DCmdSetwhitelist());
     // addList.add(new DCmdToggleweb());
     // addList.add(new DCmdUnwhitelist());
-    // addList.add(new DCmdUser());
+    addList.add(new DCmdUser());
     // addList.add(new DCmdWarn());
     // addList.add(new DCmdAlts());
     // addList.add(new DCmdInfractions());
