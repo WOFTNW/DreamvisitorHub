@@ -66,7 +66,7 @@ public class DCmdLink implements DiscordCommand {
 
       user.setSnowflakeId(targetUser.getIdLong());
       user.setDiscord_id(targetUser.getId());
-      user.setDcUsername(targetUser.getName());
+      user.setDiscord_username(targetUser.getName());
       user.setDiscord_img(targetUser.getEffectiveAvatarUrl());
     } else if (existingDiscordUser.isPresent()) {
       // Update existing Discord user with Minecraft info
@@ -87,7 +87,7 @@ public class DCmdLink implements DiscordCommand {
       user.setMcUsername(username);
       user.setSnowflakeId(targetUser.getIdLong());
       user.setDiscord_id(targetUser.getId());
-      user.setDcUsername(targetUser.getName());
+      user.setDiscord_username(targetUser.getName());
       user.setDiscord_img(targetUser.getEffectiveAvatarUrl());
     }
 

@@ -11,7 +11,7 @@ public class DVUser {
 
   private UUID mc_uuid;
   private String mcUsername;
-  private String dcUsername;
+  private String discord_username;
   private String discord_id;
   private String discord_img;
   private Long snowflakeId;
@@ -45,16 +45,16 @@ public class DVUser {
     return snowflakeId;
   }
 
-  public String getDcUsername() {
-    return dcUsername;
+  public String getDiscord_username() {
+    return discord_username;
   }
 
   public String getMcUsername() {
     return mcUsername;
   }
 
-  public void setDcUsername(String dcUsername) {
-    this.dcUsername = dcUsername;
+  public void setDiscord_username(String dcUsername) {
+    this.discord_username = dcUsername;
   }
 
   public void setMcUsername(String mcUsername) {

@@ -159,6 +159,7 @@ public class PocketBaseUserRepository implements UserRepository {
     user.setCollectionName(getStringOrNull(json, "collectionName"));
 
     user.setDiscord_id(getStringOrNull(json, "discord_id"));
+    user.setDiscord_username(getStringOrNull(json, "discord_username"));
     user.setDiscord_img(getStringOrNull(json, "discord_img"));
     user.setMcUsername(getStringOrNull(json, "mc_username"));
 
@@ -216,6 +217,8 @@ public class PocketBaseUserRepository implements UserRepository {
     // Only include fields that PocketBase expects for updates/creates
     if (user.getDiscord_id() != null)
       json.addProperty("discord_id", user.getDiscord_id());
+    if (user.getDiscord_username() != null)
+      json.addProperty("discord_username", user.getDiscord_username());
     if (user.getDiscord_img() != null)
       json.addProperty("discord_img", user.getDiscord_img());
     if (user.getMcUsername() != null)
@@ -248,7 +251,7 @@ public class PocketBaseUserRepository implements UserRepository {
     // Add relation fields (these need to be handled separately based on
     // PocketBase's expectations)
     // For now, we'll just leave them out as they typically require special handling
-
+    // TODO:Add relation fields
     return json;
   }
 
