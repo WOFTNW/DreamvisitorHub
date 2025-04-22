@@ -88,9 +88,9 @@ public class Bot {
         jda.awaitReady();
         System.out.println("Bot is ready.");
 
-        long chatChannelID = Long.parseLong((String) config.getOrDefault("chatChannelID", null));
-        long logChannelID = Long.parseLong((String) config.getOrDefault("logChannelID", null));
-        long whitelistChannelID = Long.parseLong((String) config.getOrDefault("whitelistChannelID", null));
+        long chatChannelID = getChannelIdFromConfig("chatChannelID");
+        long logChannelID = getChannelIdFromConfig("logChannelID");
+        long whitelistChannelID = getChannelIdFromConfig("whitelistChannelID");
 
         System.out.println(String.valueOf(chatChannelID));
         System.out.println(String.valueOf(logChannelID));
@@ -124,18 +124,21 @@ public class Bot {
 
   public static TextChannel getGameChatChannel() {
     if (gameChatChannel == null) {
-      Long channelId = ((Number) config.getOrDefault("chatChannelID", 0L)).longValue();
-      if (channelId != null && channelId != 0L)
+      long channelId = getChannelIdFromConfig("chatChannelID");
+      if (channelId != 0L) {
         gameChatChannel = jda.getTextChannelById(channelId);
+      }
     }
     return gameChatChannel;
   }
 
   public static void setGameChatChannel(TextChannel channel) {
     gameChatChannel = channel;
-    config.put("chatChannelID", gameChatChannel.getIdLong());
+    config.put("chatChannelID", String.valueOf(gameChatChannel.getIdLong()));
     try {
       saveConfig();
+      // After saving config, reload channels to ensure consistency
+      reloadChannels();
     } catch (FileNotFoundException e) {
       System.out.println("Error saving config: " + e.getMessage());
     }
@@ -143,18 +146,21 @@ public class Bot {
 
   public static TextChannel getWhitelistChannel() {
     if (whitelistChannel == null) {
-      Long channelId = ((Number) config.getOrDefault("whitelistChannelID", 0L)).longValue();
-      if (channelId != null && channelId != 0L)
+      long channelId = getChannelIdFromConfig("whitelistChannelID");
+      if (channelId != 0L) {
         whitelistChannel = jda.getTextChannelById(channelId);
+      }
     }
     return whitelistChannel;
   }
 
   public static void setWhitelistChannel(TextChannel channel) {
     whitelistChannel = channel;
-    config.put("whitelistChannelID", whitelistChannel.getIdLong());
+    config.put("whitelistChannelID", String.valueOf(whitelistChannel.getIdLong()));
     try {
       saveConfig();
+      // After saving config, reload channels to ensure consistency
+      reloadChannels();
     } catch (FileNotFoundException e) {
       System.out.println("Error saving config: " + e.getMessage());
     }
@@ -162,18 +168,21 @@ public class Bot {
 
   public static TextChannel getGameLogChannel() {
     if (gameLogChannel == null) {
-      Long channelId = ((Number) config.getOrDefault("logChannelID", 0L)).longValue();
-      if (channelId != null && channelId != 0L)
+      long channelId = getChannelIdFromConfig("logChannelID");
+      if (channelId != 0L) {
         gameLogChannel = jda.getTextChannelById(channelId);
+      }
     }
     return gameLogChannel;
   }
 
   public static void setGameLogChannel(TextChannel channel) {
     gameLogChannel = channel;
-    config.put("logChannelID", gameLogChannel.getIdLong());
+    config.put("logChannelID", String.valueOf(gameLogChannel.getIdLong()));
     try {
       saveConfig();
+      // After saving config, reload channels to ensure consistency
+      reloadChannels();
     } catch (FileNotFoundException e) {
       System.out.println("Error saving config: " + e.getMessage());
     }
@@ -212,6 +221,63 @@ public class Bot {
   @Contract("_, _ -> fail")
   public static Timestamp createTimestamp(@NotNull LocalDateTime dateTime, @NotNull TimeFormat format) {
     return format.atInstant(dateTime.toInstant(OffsetDateTime.now().getOffset()));
+  }
+
+  /**
+   * Helper method to safely get a channel ID from config regardless of its type
+   *
+   * @param configKey The configuration key
+   * @return The channel ID as a long, or 0 if not found or invalid
+   */
+  private static long getChannelIdFromConfig(String configKey) {
+    Object value = config.getOrDefault(configKey, "0");
+
+    if (value instanceof Number) {
+      return ((Number) value).longValue();
+    } else if (value instanceof String) {
+      try {
+        return Long.parseLong((String) value);
+      } catch (NumberFormatException e) {
+        logger.warning("Invalid channel ID format for " + configKey + ": " + value);
+        return 0L;
+      }
+    }
+
+    return 0L;
+  }
+
+  /**
+   * Reloads all channel references from the configuration
+   */
+  public static void reloadChannels() {
+    if (jda == null || botFailed) {
+      return;
+    }
+
+    try {
+      // Load channels from config using the safe helper method
+      long chatChannelID = getChannelIdFromConfig("chatChannelID");
+      long logChannelID = getChannelIdFromConfig("logChannelID");
+      long whitelistChannelID = getChannelIdFromConfig("whitelistChannelID");
+
+      // Update channel references
+      if (chatChannelID != 0L) {
+        gameChatChannel = jda.getTextChannelById(chatChannelID);
+      }
+
+      if (logChannelID != 0L) {
+        gameLogChannel = jda.getTextChannelById(logChannelID);
+      }
+
+      if (whitelistChannelID != 0L) {
+        whitelistChannel = jda.getTextChannelById(whitelistChannelID);
+      }
+
+      logger.info("Reloaded channel references from configuration");
+    } catch (Exception e) {
+      logger.warning("Failed to reload channels: " + e.getMessage());
+      e.printStackTrace(); // Print stack trace for debugging
+    }
   }
 
   /**

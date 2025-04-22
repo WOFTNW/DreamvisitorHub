@@ -80,7 +80,28 @@ public class PBConfigLoader {
     renameField(config, "game_log_channel", "logChannelID");
     renameField(config, "resource_pack_repo", "resourcePackRepo");
 
+    // Ensure consistent handling of channel IDs
+    ensureChannelIdFormat(config, "whitelistChannelID");
+    ensureChannelIdFormat(config, "chatChannelID");
+    ensureChannelIdFormat(config, "logChannelID");
+
     // Add other field mappings as needed
+  }
+
+  /**
+   * Ensures that channel ID fields are consistently stored as Strings
+   *
+   * @param config    The configuration map
+   * @param fieldName The field name to check
+   */
+  private static void ensureChannelIdFormat(Map<String, Object> config, String fieldName) {
+    if (config.containsKey(fieldName)) {
+      Object value = config.get(fieldName);
+      if (value instanceof Number) {
+        // Convert Number to String to ensure consistent handling
+        config.put(fieldName, String.valueOf(((Number) value).longValue()));
+      }
+    }
   }
 
   /**
