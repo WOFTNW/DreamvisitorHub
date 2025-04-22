@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public class User {
+public class DVUser {
   private String id;
   private String collectionId;
   private String collectionName;

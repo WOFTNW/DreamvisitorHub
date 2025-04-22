@@ -49,7 +49,7 @@ public class DCmdUser implements DiscordCommand {
     UserRepository userRepository = getUserRepository();
 
     // Find user by Discord ID (snowflake)
-    Optional<org.woftnw.DreamvisitorHub.data.type.User> userData = userRepository
+    Optional<org.woftnw.DreamvisitorHub.data.type.DVUser> userData = userRepository
         .findBySnowflakeId(targetUser.getIdLong());
 
     EmbedBuilder builder = new EmbedBuilder();
@@ -59,7 +59,7 @@ public class DCmdUser implements DiscordCommand {
 
     if (userData.isPresent()) {
       // User found in database
-      org.woftnw.DreamvisitorHub.data.type.User user = userData.get();
+      org.woftnw.DreamvisitorHub.data.type.DVUser user = userData.get();
 
       // Minecraft Information
       builder.addField("Minecraft Username",

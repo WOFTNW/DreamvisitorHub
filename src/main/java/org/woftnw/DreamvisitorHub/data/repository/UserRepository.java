@@ -1,6 +1,6 @@
 package org.woftnw.DreamvisitorHub.data.repository;
 
-import org.woftnw.DreamvisitorHub.data.type.User;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +16,7 @@ public interface UserRepository {
    * @param id PocketBase record ID
    * @return Optional containing the user if found
    */
-  Optional<User> findById(String id);
+  Optional<DVUser> findById(String id);
 
   /**
    * Find a user by their Minecraft UUID
@@ -24,7 +24,7 @@ public interface UserRepository {
    * @param uuid Minecraft UUID
    * @return Optional containing the user if found
    */
-  Optional<User> findByUuid(UUID uuid);
+  Optional<DVUser> findByUuid(UUID uuid);
 
   /**
    * Find a user by their Discord ID
@@ -32,7 +32,7 @@ public interface UserRepository {
    * @param discordId Discord ID
    * @return Optional containing the user if found
    */
-  Optional<User> findByDiscordId(String discordId);
+  Optional<DVUser> findByDiscordId(String discordId);
 
   /**
    * Find a user by their Discord Snowflake ID
@@ -40,7 +40,7 @@ public interface UserRepository {
    * @param snowflakeId Discord Snowflake ID
    * @return Optional containing the user if found
    */
-  Optional<User> findBySnowflakeId(Long snowflakeId);
+  Optional<DVUser> findBySnowflakeId(Long snowflakeId);
 
   /**
    * Find a user by their Minecraft username
@@ -48,14 +48,14 @@ public interface UserRepository {
    * @param mcUsername Minecraft username
    * @return Optional containing the user if found
    */
-  Optional<User> findByMcUsername(String mcUsername);
+  Optional<DVUser> findByMcUsername(String mcUsername);
 
   /**
    * Get all users
    *
    * @return List of all users
    */
-  List<User> findAll();
+  List<DVUser> findAll();
 
   /**
    * Save a user (create or update)
@@ -63,14 +63,14 @@ public interface UserRepository {
    * @param user User to save
    * @return Saved user
    */
-  User save(User user);
+  DVUser save(DVUser user);
 
   /**
    * Delete a user
    *
    * @param user User to delete
    */
-  void delete(User user);
+  void delete(DVUser user);
 
   /**
    * Delete a user by ID

@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
-import org.woftnw.DreamvisitorHub.data.type.User;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 
 import java.io.IOException;
@@ -36,7 +36,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<User> findById(String id) {
+  public Optional<DVUser> findById(String id) {
     try {
       JsonObject record = pocketBase.getRecord(COLLECTION_NAME, id, null, null);
       return Optional.of(mapToUser(record));
@@ -47,7 +47,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<User> findByUuid(UUID uuid) {
+  public Optional<DVUser> findByUuid(UUID uuid) {
     try {
       String filter = "uuid = '" + uuid.toString() + "'";
       JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
@@ -59,7 +59,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<User> findByDiscordId(String discordId) {
+  public Optional<DVUser> findByDiscordId(String discordId) {
     try {
       String filter = "discord_id = '" + discordId + "'";
       JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
@@ -71,7 +71,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<User> findBySnowflakeId(Long snowflakeId) {
+  public Optional<DVUser> findBySnowflakeId(Long snowflakeId) {
     try {
       String filter = "discord_id = '" + snowflakeId.toString() + "'";
       JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
@@ -83,7 +83,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<User> findByMcUsername(String mcUsername) {
+  public Optional<DVUser> findByMcUsername(String mcUsername) {
     try {
       String filter = "mc_username = '" + mcUsername + "'";
       JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
@@ -95,7 +95,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public List<User> findAll() {
+  public List<DVUser> findAll() {
     try {
       List<JsonObject> records = pocketBase.getFullList(COLLECTION_NAME, 500, null, null, null, null);
       return records.stream()
@@ -108,7 +108,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public User save(User user) {
+  public DVUser save(DVUser user) {
     try {
       JsonObject userData = mapToJsonObject(user);
 
@@ -128,7 +128,7 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public void delete(User user) {
+  public void delete(DVUser user) {
     if (user.getId() != null) {
       deleteById(user.getId());
     }
@@ -150,8 +150,8 @@ public class PocketBaseUserRepository implements UserRepository {
    * @param json JsonObject from PocketBase API
    * @return Mapped User object
    */
-  private User mapToUser(JsonObject json) {
-    User user = new User();
+  private DVUser mapToUser(JsonObject json) {
+    DVUser user = new DVUser();
 
     user.setId(getStringOrNull(json, "id"));
     user.setCollectionId(getStringOrNull(json, "collectionId"));
@@ -208,7 +208,7 @@ public class PocketBaseUserRepository implements UserRepository {
    * @param user User object to convert
    * @return JsonObject for PocketBase API
    */
-  private JsonObject mapToJsonObject(User user) {
+  private JsonObject mapToJsonObject(DVUser user) {
     JsonObject json = new JsonObject();
 
     // Only include fields that PocketBase expects for updates/creates
