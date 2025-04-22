@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.woftnw.DreamvisitorHub.App;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 
 import java.awt.*;
@@ -32,7 +33,7 @@ public class DCmdUser implements DiscordCommand {
   @Override
   public @NotNull SlashCommandData getCommandData() {
     return Commands.slash("user", "Get the details of a user.")
-        .addOption(OptionType.USER, "user", "The user to search for.", true)
+        .addOption(OptionType.STRING, "user", "The user to search for.", true)
         .setDefaultPermissions(DefaultMemberPermissions.ENABLED);
   }
 
@@ -49,7 +50,7 @@ public class DCmdUser implements DiscordCommand {
     UserRepository userRepository = getUserRepository();
 
     // Find user by Discord ID (snowflake)
-    Optional<org.woftnw.DreamvisitorHub.data.type.DVUser> userData = userRepository
+    Optional<DVUser> userData = userRepository
         .findBySnowflakeId(targetUser.getIdLong());
 
     EmbedBuilder builder = new EmbedBuilder();
@@ -59,7 +60,7 @@ public class DCmdUser implements DiscordCommand {
 
     if (userData.isPresent()) {
       // User found in database
-      org.woftnw.DreamvisitorHub.data.type.DVUser user = userData.get();
+      DVUser user = userData.get();
 
       // Minecraft Information
       builder.addField("Minecraft Username",
