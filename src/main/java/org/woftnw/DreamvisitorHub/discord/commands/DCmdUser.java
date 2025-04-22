@@ -12,6 +12,7 @@ import org.woftnw.DreamvisitorHub.App;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 
 import java.awt.*;
@@ -69,7 +70,8 @@ public class DCmdUser implements DiscordCommand {
 
       // Economic Info
       builder.addField("Balance",
-          user.getBalance() != null ? String.format("%.2f", user.getBalance()) : "0.00",
+          user.getBalance() != null ? String.format("%.2f", user.getBalance()) + Bot.CURRENCY_SYMBOL
+              : "0.00 " + Bot.CURRENCY_SYMBOL,
           true);
 
       builder.addField("Daily Streak",

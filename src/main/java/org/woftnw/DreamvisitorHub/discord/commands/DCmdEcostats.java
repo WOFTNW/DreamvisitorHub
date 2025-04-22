@@ -1,44 +1,87 @@
-// package org.woftnw.DreamvisitorHub.discord.commands;
+package org.woftnw.DreamvisitorHub.discord.commands;
 
-// import io.github.stonley890.dreamvisitor.Bot;
-// import io.github.stonley890.dreamvisitor.data.Economy;
-// import net.dv8tion.jda.api.EmbedBuilder;
-// import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-// import net.dv8tion.jda.api.interactions.commands.build.Commands;
-// import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
-// import net.dv8tion.jda.api.utils.TimeFormat;
-// import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import net.dv8tion.jda.api.utils.TimeFormat;
+import org.jetbrains.annotations.NotNull;
+import org.woftnw.DreamvisitorHub.App;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.DreamvisitorHub.discord.Bot;
 
-// import java.time.LocalDateTime;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
-// public class DCmdEcostats implements DiscordCommand {
-//     @NotNull
-//     @Override
-//     public SlashCommandData getCommandData() {
-//         return Commands.slash("ecostats", "Get your stats.");
-//     }
+import java.lang.*;
 
-//     @Override
-//     public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+public class DCmdEcostats implements DiscordCommand {
 
-//         Economy.Consumer consumer = Economy.getConsumer(event.getUser().getIdLong());
-//         Economy.GameData gameData = consumer.getGameData();
-//         gameData.updateStreak();
-//         consumer.setGameData(gameData);
-//         Economy.saveConsumer(consumer);
+  private final UserRepository userRepository = new PocketBaseUserRepository(App.getPb());
 
-//         EmbedBuilder embed = new EmbedBuilder();
+  @NotNull
+  @Override
+  public SlashCommandData getCommandData() {
+    return Commands.slash("ecostats", "Get your economic stats.");
+  }
 
-//         embed.setTitle("Stats").setAuthor(null, event.getUser().getAvatarUrl())
-//                 .setDescription("Here are your stats as of " + Bot.createTimestamp(LocalDateTime.now(), TimeFormat.DATE_TIME_SHORT) + ", " + event.getUser().getAsMention() + ".")
-//                 .addField("Balance", Economy.getCurrencySymbol() + consumer.getBalance(), true)
-//                 .addField("Daily Streak", gameData.getDailyStreak() + " days", true);
+  @Override
+  public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+    Long discordId = event.getUser().getIdLong();
+    Optional<DVUser> userOptional = userRepository.findBySnowflakeId(discordId);
 
-//         String workMinutes = String.valueOf(gameData.timeUntilNextWork().toMinutes()).replaceFirst("-", "");
+    if (!userOptional.isPresent()) {
+      event.reply("You don't have a profile yet. Please connect your Minecraft account first.").setEphemeral(true)
+          .queue();
+      return;
+    }
 
-//         embed.addField("Time Until Next Work", workMinutes + " minutes.", false);
+    DVUser user = userOptional.get();
+    EmbedBuilder embed = new EmbedBuilder();
 
-//         event.replyEmbeds(embed.build()).queue();
+    embed.setTitle("Economic Stats")
+        .setAuthor(event.getUser().getName(), null, event.getUser().getAvatarUrl())
+        .setDescription(
+            "Here are your stats as of " + Bot.createTimestamp(LocalDateTime.now(), TimeFormat.DATE_TIME_SHORT) + ", "
+                + event.getUser().getAsMention() + ".")
+        .addField("Balance", Bot.CURRENCY_SYMBOL + " " + (user.getBalance() != null ? user.getBalance() : "0"), true)
+        .addField("Daily Streak", (user.getDaily_streak() != null ? user.getDaily_streak() : "0") + " days", true);
 
-//     }
-// }
+    int workCoolDown = Integer.parseInt((String) App.getConfig().get("work_cooldown"));
+    // Format and add last work time
+    String lastWork = formatTime(user.getLast_work());
+    // Calculate when the user can work again
+    String timeUntilNextWork;
+
+    if (user.getLast_work() != null) {
+      OffsetDateTime nextWorkTime = user.getLast_work().plusMinutes(workCoolDown);
+
+      if (OffsetDateTime.now().isAfter(nextWorkTime)) {
+        timeUntilNextWork = "Available now";
+      } else {
+        // Convert to LocalDateTime for Bot.createTimestamp
+        LocalDateTime nextWorkLocalTime = nextWorkTime.toLocalDateTime();
+        timeUntilNextWork = Bot.createTimestamp(nextWorkLocalTime, TimeFormat.RELATIVE).toString();
+      }
+    } else {
+      timeUntilNextWork = "Available now";
+    }
+
+    embed.addField("Time until next work", timeUntilNextWork, false);
+
+    event.replyEmbeds(embed.build()).queue();
+  }
+
+  private String formatTime(OffsetDateTime time) {
+    if (time == null) {
+      return "Never";
+    }
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    return time.format(formatter);
+  }
+}

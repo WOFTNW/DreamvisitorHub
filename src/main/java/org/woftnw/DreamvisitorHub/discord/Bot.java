@@ -42,7 +42,7 @@ public class Bot {
   public static final List<Role> tribeRole = new ArrayList<>();
   static JDA jda;
   private static final Logger logger = Logger.getLogger("DreamvisitorHub");
-
+  public static final String CURRENCY_SYMBOL = "💎";
   public static boolean botFailed;
   private static Map<String, Object> config;
 
