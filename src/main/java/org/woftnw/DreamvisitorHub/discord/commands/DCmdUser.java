@@ -33,7 +33,7 @@ public class DCmdUser implements DiscordCommand {
   @Override
   public @NotNull SlashCommandData getCommandData() {
     return Commands.slash("user", "Get the details of a user.")
-        .addOption(OptionType.STRING, "user", "The user to search for.", true)
+        .addOption(OptionType.USER, "user", "The user to search for.", true)
         .setDefaultPermissions(DefaultMemberPermissions.ENABLED);
   }
 
@@ -109,6 +109,9 @@ public class DCmdUser implements DiscordCommand {
 
       if (user.getLast_daily() != null) {
         builder.addField("Last Daily", user.getLast_daily().format(DATE_FORMATTER), true);
+      }
+      if (user.getLast_played() != null) {
+        builder.addField("Last Played", user.getLast_played().format(DATE_FORMATTER), true);
       }
 
       if (user.getCreated() != null) {

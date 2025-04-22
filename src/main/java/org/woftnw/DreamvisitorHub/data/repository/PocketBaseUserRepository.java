@@ -195,6 +195,7 @@ public class PocketBaseUserRepository implements UserRepository {
 
     // Parse datetime fields
     user.setLast_work(getOffsetDateTimeOrNull(json, "last_work"));
+    user.setLast_Played(getOffsetDateTimeOrNull(json, "last_played"));
     user.setLast_daily(getOffsetDateTimeOrNull(json, "last_daily"));
     user.setCreated(getOffsetDateTimeOrNull(json, "created"));
     user.setUpdated(getOffsetDateTimeOrNull(json, "updated"));

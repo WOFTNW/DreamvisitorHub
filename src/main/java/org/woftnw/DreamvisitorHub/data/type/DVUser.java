@@ -28,6 +28,7 @@ public class DVUser {
 
   private OffsetDateTime last_work;
   private OffsetDateTime last_daily;
+  private OffsetDateTime last_played;
 
   private Boolean is_suspended;
   private Boolean is_banned;
@@ -181,6 +182,10 @@ public class DVUser {
     this.last_work = last_work;
   }
 
+  public OffsetDateTime getLast_played() {
+    return last_played;
+  }
+
   public OffsetDateTime getLast_daily() {
     return last_daily;
   }
@@ -219,5 +224,9 @@ public class DVUser {
 
   public void setUpdated(OffsetDateTime updated) {
     this.updated = updated;
+  }
+
+  public void setLast_Played(OffsetDateTime last_played) {
+    this.last_played = last_played;
   }
 }
