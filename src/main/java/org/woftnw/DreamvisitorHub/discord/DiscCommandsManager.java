@@ -39,7 +39,6 @@ public class DiscCommandsManager extends ListenerAdapter {
         addList.add(new DCmdSchedulerestart());
         addList.add(new DCmdSetgamechat());
         addList.add(new DCmdSetlogchat());
-        addList.add(new DCmdSetrole());
         addList.add(new DCmdSetwhitelist());
         addList.add(new DCmdToggleweb());
         addList.add(new DCmdUnwhitelist());
