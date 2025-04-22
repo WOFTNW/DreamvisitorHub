@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
+import org.woftnw.DreamvisitorHub.util.UUIDFromater;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -47,13 +48,13 @@ public class PocketBaseUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<DVUser> findByUuid(UUID uuid) {
+  public Optional<DVUser> findByUuid(UUID mc_uuid) {
     try {
-      String filter = "uuid = '" + uuid.toString() + "'";
+      String filter = "mc_uuid = '" + mc_uuid.toString() + "'";
       JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
       return Optional.of(mapToUser(record));
     } catch (IOException e) {
-      LOGGER.log(Level.FINE, "No user found with UUID: " + uuid);
+      LOGGER.log(Level.FINE, "No user found with UUID: " + mc_uuid);
       return Optional.empty();
     }
   }
@@ -161,11 +162,11 @@ public class PocketBaseUserRepository implements UserRepository {
     user.setDiscord_img(getStringOrNull(json, "discord_img"));
     user.setMcUsername(getStringOrNull(json, "mc_username"));
 
-    if (json.has("uuid") && !json.get("uuid").isJsonNull()) {
+    if (json.has("mc_uuid") && !json.get("mc_uuid").isJsonNull()) {
       try {
-        user.setUuid(UUID.fromString(json.get("uuid").getAsString()));
+        user.setMc_uuid(UUID.fromString(UUIDFromater.formatUuid(json.get("mc_uuid").getAsString())));
       } catch (IllegalArgumentException e) {
-        LOGGER.warning("Invalid UUID format: " + json.get("uuid").getAsString());
+        LOGGER.warning("Invalid UUID format: " + json.get("mc_uuid").getAsString());
       }
     }
 
@@ -219,8 +220,8 @@ public class PocketBaseUserRepository implements UserRepository {
       json.addProperty("discord_img", user.getDiscord_img());
     if (user.getMcUsername() != null)
       json.addProperty("mc_username", user.getMcUsername());
-    if (user.getUuid() != null)
-      json.addProperty("uuid", user.getUuid().toString());
+    if (user.getMc_uuid() != null)
+      json.addProperty("mc_uuid", user.getMc_uuid().toString());
 
     // Add numeric fields
     if (user.getClaim_limit() != null)
@@ -272,6 +273,11 @@ public class PocketBaseUserRepository implements UserRepository {
       try {
         String dateStr = json.get(key).getAsString();
 
+        // Check if the string is empty or blank
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+          return null;
+        }
+
         // Handle PocketBase date format "yyyy-MM-dd HH:mm:ss.SSSZ"
         if (dateStr.contains(" ") && !dateStr.contains("T")) {
           // Replace space with 'T' to make it ISO-8601 compatible
@@ -286,6 +292,11 @@ public class PocketBaseUserRepository implements UserRepository {
         try {
           DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSZ");
           String dateStr = json.get(key).getAsString();
+
+          // Check if the string is empty or blank
+          if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+          }
 
           // Convert to ISO format for parsing
           if (dateStr.endsWith("Z")) {

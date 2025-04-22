@@ -28,7 +28,7 @@ public class DiscCommandsManager extends ListenerAdapter {
 
     addList.add(new DCmdActivity());
     // addList.add(new DCmdBroadcast());
-    // addList.add(new DCmdLink());
+    addList.add(new DCmdLink());
     // addList.add(new DCmdList());
     // addList.add(new DCmdMsg());
     // addList.add(new DCmdPanic());

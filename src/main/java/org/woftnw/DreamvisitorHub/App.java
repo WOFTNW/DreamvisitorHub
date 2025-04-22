@@ -1,5 +1,6 @@
 package org.woftnw.DreamvisitorHub;
 
+import org.shanerx.mojang.Mojang;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 import org.woftnw.DreamvisitorHub.util.ConfigLoader;
@@ -8,12 +9,14 @@ import org.woftnw.DreamvisitorHub.util.PBConfigLoader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 public class App {
   private static final Logger logger = Logger.getLogger("DreamvisitorHub");
   private static final String CONFIG_PATH = "config.yml";
   private static PocketBase pb;
+  private static Mojang mojang;
   private static Map<String, Object> config;
 
   public static void main(String[] args) throws IOException {
@@ -24,7 +27,7 @@ public class App {
 
     // Initialize PocketBase with the minimal configuration
     pb = PocketBase.fromConfig(initialConfig);
-
+    mojang = new Mojang().connect();
     try {
       // Try to load configuration from PocketBase
       Map<String, Object> pbConfig = PBConfigLoader.loadConfig(pb);
@@ -63,5 +66,9 @@ public class App {
 
   public static Map<String, Object> getConfig() {
     return config;
+  }
+
+  public static Mojang getMojang() {
+    return mojang;
   }
 }

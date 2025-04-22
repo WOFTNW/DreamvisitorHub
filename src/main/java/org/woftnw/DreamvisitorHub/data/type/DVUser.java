@@ -9,7 +9,7 @@ public class DVUser {
   private String collectionId;
   private String collectionName;
 
-  private UUID uuid;
+  private UUID mc_uuid;
   private String mcUsername;
   private String dcUsername;
   private String discord_id;
@@ -37,8 +37,8 @@ public class DVUser {
   private OffsetDateTime updated;
 
   // Existing getters and setters
-  public UUID getUuid() {
-    return uuid;
+  public UUID getMc_uuid() {
+    return mc_uuid;
   }
 
   public Long getSnowflakeId() {
@@ -65,8 +65,8 @@ public class DVUser {
     this.snowflakeId = snowflakeId;
   }
 
-  public void setUuid(UUID uuid) {
-    this.uuid = uuid;
+  public void setMc_uuid(UUID uuid) {
+    this.mc_uuid = uuid;
   }
 
   // New getters and setters

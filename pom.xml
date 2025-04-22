@@ -27,8 +27,8 @@
 
   <repositories>
     <repository>
-      <id>spigot-repo</id>
-      <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
     </repository>
   </repositories>
 
@@ -64,13 +64,18 @@
       <artifactId>okhttp-sse</artifactId>
       <version>3.14.8</version>
     </dependency>
-
+    <!-- GSON (json parser) -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.10.1</version>
     </dependency>
-    
+    <!-- Mojang API -->
+    <dependency>
+      <groupId>com.github.SparklingComet</groupId>
+      <artifactId>java-mojang-api</artifactId>
+      <version>-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
 </project>
