@@ -98,8 +98,9 @@ public class DCmdUser implements DiscordCommand {
 
       // Time Info
       if (user.getPlay_time() != null) {
-        int hours = user.getPlay_time() / 3600;
-        int minutes = (user.getPlay_time() % 3600) / 60;
+        long totalSeconds = user.getPlay_time() / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
         builder.addField("Play Time", String.format("%d hours, %d minutes", hours, minutes), false);
       }
 
