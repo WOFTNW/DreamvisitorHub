@@ -14,6 +14,12 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.Yaml;
+import org.woftnw.DreamvisitorHub.App;
+import org.woftnw.DreamvisitorHub.util.ConfigLoader;
+import org.woftnw.DreamvisitorHub.util.PBConfigLoader;
+import org.woftnw.DreamvisitorHub.pb.PocketBase;
+
+import com.google.gson.JsonObject;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -82,9 +88,9 @@ public class Bot {
         jda.awaitReady();
         System.out.println("Bot is ready.");
 
-        long chatChannelID = ((Number) config.getOrDefault("chatChannelID", 0L)).longValue();
-        long logChannelID = ((Number) config.getOrDefault("logChannelID", 0L)).longValue();
-        long whitelistChannelID = ((Number) config.getOrDefault("whitelistChannelID", 0L)).longValue();
+        long chatChannelID = Long.parseLong((String) config.getOrDefault("chatChannelID", null));
+        long logChannelID = Long.parseLong((String) config.getOrDefault("logChannelID", null));
+        long whitelistChannelID = Long.parseLong((String) config.getOrDefault("whitelistChannelID", null));
 
         System.out.println(String.valueOf(chatChannelID));
         System.out.println(String.valueOf(logChannelID));
@@ -209,16 +215,60 @@ public class Bot {
   }
 
   /**
-   * Saves the configuration to a file.
-   *
-   * @throws FileNotFoundException if the file cannot be written
+   * Saves the configuration to PocketBase and falls back to file if needed
    */
   private static void saveConfig() throws FileNotFoundException {
-    Yaml yaml = new Yaml();
-    try (FileWriter writer = new FileWriter("config.yml")) {
-      yaml.dump(config, writer);
-    } catch (IOException e) {
-      throw new FileNotFoundException("Failed to save config: " + e.getMessage());
+    try {
+      // Try to update config in PocketBase
+      JsonObject configData = new JsonObject();
+
+      // Convert config map to JsonObject with appropriate field names
+      for (Map.Entry<String, Object> entry : config.entrySet()) {
+        String key = entry.getKey();
+        Object value = entry.getValue();
+
+        // Skip null values
+        if (value == null) {
+          continue;
+        }
+
+        // Map field names back to PocketBase format
+        switch (key) {
+          case "whitelistChannelID":
+            key = "whitelist_channel";
+            break;
+          case "chatChannelID":
+            key = "game_chat_channel";
+            break;
+          case "logChannelID":
+            key = "game_log_channel";
+            break;
+          case "resourcePackRepo":
+            key = "resource_pack_repo";
+            break;
+          // Add other cases as needed
+        }
+
+        if (value instanceof String) {
+          configData.addProperty(key, (String) value);
+        } else if (value instanceof Number) {
+          configData.addProperty(key, (Number) value);
+        } else if (value instanceof Boolean) {
+          configData.addProperty(key, (Boolean) value);
+        }
+      }
+
+      // Update the record in PocketBase
+      App.getPb().updateRecord("dreamvisitor_config", "45q1at367581q3a", configData, null, null);
+      logger.info("Configuration saved to PocketBase");
+    } catch (Exception e) {
+      logger.warning("Failed to save configuration to PocketBase: " + e.getMessage());
+      logger.warning("Falling back to file-based configuration storage");
+
+      // Fall back to saving to file
+      if (!ConfigLoader.saveConfig("config.yml", config)) {
+        throw new FileNotFoundException("Failed to save config to both PocketBase and file");
+      }
     }
   }
 }

@@ -5,6 +5,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +47,31 @@ public class ConfigLoader {
     } catch (Exception e) {
       logger.severe("Error parsing config file: " + e.getMessage());
       return new HashMap<>();
+    }
+  }
+
+  /**
+   * Saves a configuration map to a YAML file
+   *
+   * @param filePath path to the YAML file
+   * @param config   the configuration map to save
+   * @return true if saving succeeded, false otherwise
+   */
+  public static boolean saveConfig(String filePath, Map<String, Object> config) {
+    try {
+      File configFile = new File(filePath);
+      Yaml yaml = new Yaml();
+      FileWriter writer = new FileWriter(configFile);
+      yaml.dump(config, writer);
+      writer.close();
+      logger.info("Successfully saved config to: " + filePath);
+      return true;
+    } catch (IOException e) {
+      logger.severe("Failed to save config file: " + e.getMessage());
+      return false;
+    } catch (Exception e) {
+      logger.severe("Error writing config file: " + e.getMessage());
+      return false;
     }
   }
 }
