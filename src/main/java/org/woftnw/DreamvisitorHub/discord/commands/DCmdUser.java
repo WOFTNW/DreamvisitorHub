@@ -169,9 +169,13 @@ public class DCmdUser implements DiscordCommand {
 
     logger.info("sending Message");
     if (skinImageBytes != null) {
-      event.getHook().sendFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes, "skin.png"))
-        .addEmbeds(builder.build())
-        .queue();
+      // Set the thumbnail to show as part of the embed
+      builder.setThumbnail("attachment://skin.png");
+
+      // Send the embed with the file attached
+      event.getHook().sendMessageEmbeds(builder.build())
+          .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes, "skin.png"))
+          .queue();
     } else {
       event.getHook().sendMessageEmbeds(builder.build()).queue();
     }
