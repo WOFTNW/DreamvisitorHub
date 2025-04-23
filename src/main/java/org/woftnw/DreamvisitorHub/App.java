@@ -1,6 +1,8 @@
 package org.woftnw.DreamvisitorHub;
 
 import org.shanerx.mojang.Mojang;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 import org.woftnw.DreamvisitorHub.util.ConfigLoader;
@@ -18,6 +20,7 @@ public class App {
   private static PocketBase pb;
   private static Mojang mojang;
   private static Map<String, Object> config;
+  private static UserRepository userRepository;
 
   public static void main(String[] args) throws IOException {
     logger.info("Starting DreamvisitorHub...");
@@ -27,6 +30,7 @@ public class App {
 
     // Initialize PocketBase with the minimal configuration
     pb = PocketBase.fromConfig(initialConfig);
+    userRepository = new PocketBaseUserRepository(App.getPb());
     mojang = new Mojang().connect();
     try {
       // Try to load configuration from PocketBase
@@ -70,5 +74,8 @@ public class App {
 
   public static Mojang getMojang() {
     return mojang;
+  }
+  public static UserRepository getUserRepository(){
+    return userRepository;
   }
 }

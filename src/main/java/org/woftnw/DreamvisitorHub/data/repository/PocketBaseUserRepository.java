@@ -74,11 +74,31 @@ public class PocketBaseUserRepository implements UserRepository {
   @Override
   public Optional<DVUser> findBySnowflakeId(Long snowflakeId) {
     try {
+      // First try with the direct snowflake ID
       String filter = "discord_id = '" + snowflakeId.toString() + "'";
-      JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
-      return Optional.of(mapToUser(record));
-    } catch (IOException e) {
-      LOGGER.log(Level.FINE, "No user found with Snowflake ID: " + snowflakeId);
+      LOGGER.info("Searching for user with filter: " + filter);
+
+      try {
+        JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
+        LOGGER.info("User found with snowflake ID: " + snowflakeId);
+        DVUser user = mapToUser(record);
+        return Optional.of(user);
+      } catch (IOException e) {
+        // First search failed, try with just string comparison if numeric search fails
+        LOGGER.info("No exact match found, trying alternative search...");
+        filter = "discord_id ~ '" + snowflakeId.toString() + "'";
+        try {
+          JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
+          LOGGER.info("User found with partial match: " + record.toString());
+          DVUser user = mapToUser(record);
+          return Optional.of(user);
+        } catch (IOException e2) {
+          LOGGER.log(Level.INFO, "No user found with Snowflake ID (partial match): " + snowflakeId);
+          return Optional.empty();
+        }
+      }
+    } catch (Exception e) {
+      LOGGER.log(Level.WARNING, "Error searching for user with Snowflake ID: " + snowflakeId, e);
       return Optional.empty();
     }
   }

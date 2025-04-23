@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class DCmdLink implements DiscordCommand {
-  private final UserRepository userRepository = new PocketBaseUserRepository(App.getPb());
+  private final UserRepository userRepository = App.getUserRepository();
 
   @Override
   public @NotNull SlashCommandData getCommandData() {
