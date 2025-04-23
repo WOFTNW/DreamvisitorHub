@@ -1,6 +1,9 @@
 package org.woftnw.mc_renderer;
 
+import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -21,8 +24,9 @@ public class MCRenderer {
   public static boolean renderModelToFile(String texturePath, String outputPath) {
     try {
       ByteBuffer textureData = loadResourceAsBuffer(texturePath);
-      ByteBuffer renderedImage = ModelRenderer.renderModelWithTexture(textureData);
-      return saveImage(renderedImage, 300, 600, outputPath);
+      ByteBuffer renderedBuffer = ModelRenderer.renderModelWithTexture(textureData);
+      BufferedImage renderedImage = byteBufferToBufferedImage(renderedBuffer, 300, 600);
+      return saveImage(renderedImage, outputPath);
     } catch (Exception e) {
       System.err.println("Error rendering model: " + e.getMessage());
       e.printStackTrace();
@@ -61,10 +65,11 @@ public class MCRenderer {
       renderer.initialize();
       renderer.loadModel();
       renderer.loadTextureFromBuffer(textureData);
-      ByteBuffer renderedImage = renderer.renderToBuffer();
+      ByteBuffer renderedBuffer = renderer.renderToBuffer();
+      BufferedImage renderedImage = byteBufferToBufferedImage(renderedBuffer, config.getWidth(), config.getHeight());
       renderer.cleanUp();
 
-      return saveImage(renderedImage, config.getWidth(), config.getHeight(), outputPath);
+      return saveImage(renderedImage, outputPath);
     } catch (Exception e) {
       System.err.println("Error rendering model: " + e.getMessage());
       e.printStackTrace();
@@ -82,8 +87,9 @@ public class MCRenderer {
   public static boolean renderModelFromUrl(String textureUrl, String outputPath) {
     try {
       ByteBuffer textureData = TextureLoader.loadTextureFromUrl(textureUrl);
-      ByteBuffer renderedImage = ModelRenderer.renderModelWithTexture(textureData);
-      return saveImage(renderedImage, 300, 600, outputPath);
+      ByteBuffer renderedBuffer = ModelRenderer.renderModelWithTexture(textureData);
+      BufferedImage renderedImage = byteBufferToBufferedImage(renderedBuffer, 300, 600);
+      return saveImage(renderedImage, outputPath);
     } catch (Exception e) {
       System.err.println("Error rendering model from URL: " + e.getMessage());
       e.printStackTrace();
@@ -91,18 +97,18 @@ public class MCRenderer {
     }
   }
 
-  public static ByteBuffer renderModelToBufferFromUrl(String textureUrl, RendererConfig config) throws IOException {
+  public static BufferedImage renderModelToBufferFromUrl(String textureUrl, RendererConfig config) throws IOException {
     ByteBuffer textureData = TextureLoader.loadTextureFromUrl(textureUrl);
-    ByteBuffer renderedImage = ModelRenderer.renderModelWithTexture(config.getModelPath(), textureData,
+    ByteBuffer renderedBuffer = ModelRenderer.renderModelWithTexture(config.getModelPath(), textureData,
         config.getWidth(), config.getHeight());
-    return renderedImage;
+    return byteBufferToBufferedImage(renderedBuffer, config.getWidth(), config.getHeight());
   }
 
-  public static ByteBuffer renderModelToBufferFromUrl(String textureUrl) {
+  public static BufferedImage renderModelToBufferFromUrl(String textureUrl) {
     try {
       ByteBuffer textureData = TextureLoader.loadTextureFromUrl(textureUrl);
-      ByteBuffer renderedImage = ModelRenderer.renderModelWithTexture(textureData);
-      return renderedImage;
+      ByteBuffer renderedBuffer = ModelRenderer.renderModelWithTexture(textureData);
+      return byteBufferToBufferedImage(renderedBuffer, 300, 600);
     } catch (Exception e) {
       System.err.println("Error rendering model from URL: " + e.getMessage());
       e.printStackTrace();
@@ -115,15 +121,16 @@ public class MCRenderer {
    *
    * @param texturePath Path to texture resource
    * @param config      Renderer configuration
-   * @return ByteBuffer containing the rendered image data
+   * @return BufferedImage containing the rendered image data
    */
-  public static ByteBuffer renderModelToBuffer(String texturePath, RendererConfig config) throws IOException {
+  public static BufferedImage renderModelToBuffer(String texturePath, RendererConfig config) throws IOException {
     ByteBuffer textureData = loadResourceAsBuffer(texturePath);
-    return ModelRenderer.renderModelWithTexture(
+    ByteBuffer renderedBuffer = ModelRenderer.renderModelWithTexture(
         config.getModelPath(),
         textureData,
         config.getWidth(),
         config.getHeight());
+    return byteBufferToBufferedImage(renderedBuffer, config.getWidth(), config.getHeight());
   }
 
   // Utility methods
@@ -151,16 +158,49 @@ public class MCRenderer {
   }
 
   /**
-   * Save image data to a file
+   * Convert ByteBuffer to BufferedImage
    *
-   * @param imageData  ByteBuffer containing the image data
-   * @param width      Width of the image in pixels
-   * @param height     Height of the image in pixels
+   * @param buffer ByteBuffer containing RGB data
+   * @param width Width of the image
+   * @param height Height of the image
+   * @return BufferedImage created from buffer data
+   */
+  private static BufferedImage byteBufferToBufferedImage(ByteBuffer buffer, int width, int height) {
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        int r = buffer.get() & 0xFF;
+        int g = buffer.get() & 0xFF;
+        int b = buffer.get() & 0xFF;
+        int rgb = (r << 16) | (g << 8) | b;
+        image.setRGB(x, height - y - 1, rgb); // Flip vertically to match OpenGL coordinate system
+      }
+    }
+    buffer.rewind(); // Reset buffer position for potential reuse
+    return image;
+  }
+
+  /**
+   * Save BufferedImage to a file
+   *
+   * @param image BufferedImage to save
    * @param outputPath Path to save the image to
    * @return true if saving was successful
    */
+  public static boolean saveImage(BufferedImage image, String outputPath) {
+    try {
+      return javax.imageio.ImageIO.write(image, "PNG", new java.io.File(outputPath));
+    } catch (IOException e) {
+      System.err.println("Error saving image: " + e.getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Legacy save image method - converts BufferedImage back to ByteBuffer for STB
+   */
   public static boolean saveImage(ByteBuffer imageData, int width, int height, String outputPath) {
-    STBImageWrite.stbi_flip_vertically_on_write(true);
-    return STBImageWrite.stbi_write_png(outputPath, width, height, 3, imageData, width * 3);
+    BufferedImage image = byteBufferToBufferedImage(imageData, width, height);
+    return saveImage(image, outputPath);
   }
 }

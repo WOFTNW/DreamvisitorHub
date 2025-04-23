@@ -13,6 +13,8 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -64,9 +66,9 @@ import java.util.List;
  */
 public class ModelRenderer {
   // Default paths
-  private static final String DEFAULT_MODEL_PATH = "/minecraft-steve/source/steve.glb";
-  private static final String VERTEX_SHADER_PATH = "https://github.com/WOFTNW/DreamvisitorHub/blob/code-refactor-removing-springboot/src/main/resources/shaders/vertex.glsl";
-  private static final String FRAGMENT_SHADER_PATH = "https://github.com/WOFTNW/DreamvisitorHub/blob/code-refactor-removing-springboot/src/main/resources/shaders/fragment.glsl";
+  private static final String DEFAULT_MODEL_PATH = "minecraft-steve/source/steve.glb";
+  private static final String VERTEX_SHADER_PATH = "shaders/vertex.glsl";
+  private static final String FRAGMENT_SHADER_PATH = "shaders/fragment.glsl";
 
   // Default rendering size
   private static final int DEFAULT_WIDTH = 300;
@@ -77,9 +79,9 @@ public class ModelRenderer {
   private static final int MC_SKIN_HEIGHT = 64;
 
   // Layer inflation constants for outer layer meshes
-  private static final float HEAD_INFLATION = 1.5f; // Increased from 1.2f for even more visible effect
-  private static final float BODY_INFLATION = 0.4f; // Increased from 0.25f
-  private static final float LIMB_INFLATION = 0.4f; // Increased from 0.25f
+  private static final float HEAD_INFLATION = 0.0f; // Increased from 1.2f for even more visible effect
+  private static final float BODY_INFLATION = 0.0f; // Increased from 0.25f
+  private static final float LIMB_INFLATION = 0.0f; // Increased from 0.25f
 
   // Instance variables
   private final int width;
@@ -932,16 +934,12 @@ public class ModelRenderer {
   }
 
   private static String loadResourceAsString(String resourcePath) {
-    try (InputStream inputStream = ModelRenderer.class.getResourceAsStream(resourcePath)) {
-      if (inputStream == null) {
-        throw new RuntimeException("Resource not found: " + resourcePath);
-      }
-
+    try (InputStream inputStream = new FileInputStream(new File(resourcePath))) {
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
       byte[] temp = new byte[1024];
       int bytesRead;
       while ((bytesRead = inputStream.read(temp)) != -1) {
-          buffer.write(temp, 0, bytesRead);
+        buffer.write(temp, 0, bytesRead);
       }
       byte[] bytes = buffer.toByteArray();
       return new String(bytes);
@@ -951,7 +949,7 @@ public class ModelRenderer {
   }
 
   private static ByteBuffer loadResourceAsBuffer(String resourcePath) {
-    try (InputStream inputStream = ModelRenderer.class.getResourceAsStream(resourcePath)) {
+    try (InputStream inputStream = new FileInputStream(new File(resourcePath))) {
       if (inputStream == null) {
         throw new RuntimeException("Resource not found: " + resourcePath);
       }
@@ -960,7 +958,7 @@ public class ModelRenderer {
       byte[] temp = new byte[1024];
       int bytesRead;
       while ((bytesRead = inputStream.read(temp)) != -1) {
-          tempBuffer.write(temp, 0, bytesRead);
+        tempBuffer.write(temp, 0, bytesRead);
       }
       byte[] bytes = tempBuffer.toByteArray();
       ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);

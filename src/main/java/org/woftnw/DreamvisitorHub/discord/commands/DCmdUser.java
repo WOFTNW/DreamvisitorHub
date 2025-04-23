@@ -31,6 +31,13 @@ import java.util.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.channels.FileChannel;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 public class DCmdUser implements DiscordCommand {
   private static final Logger logger = Logger.getLogger(DCmdUser.class.toString());
@@ -49,7 +56,7 @@ public class DCmdUser implements DiscordCommand {
     logger.info("Command requested. /user");
     User targetUser = Objects.requireNonNull(event.getOption("user")).getAsUser();
     logger.info("Target user: " + targetUser.getId());
-
+    byte[] skinImageBytes = null;
     // Defer reply to give us time to fetch data
     event.deferReply().queue();
 
@@ -77,24 +84,22 @@ public class DCmdUser implements DiscordCommand {
       // Minecraft Information
       String mcUsername = user.getMcUsername() != null ? user.getMcUsername() : "N/A";
       builder.addField("Minecraft Username", mcUsername, false);
-
       // Try to fetch player skin if we have MC username
       if (user.getMc_uuid() != null && !user.getMc_uuid().toString().isEmpty()) {
         try {
           String skinUrl = fetchPlayerSkinUrl(user.getMc_uuid().toString());
           if (skinUrl != null && !skinUrl.isEmpty()) {
-            ByteBuffer skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
-            if (skin != null) {
-              builder.setImage("attachment://skin.png");
-              event.getHook().sendMessageEmbeds(builder.build())
-                .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skin.array(), "skin.png"))
-                .queue();
-            } else {
-              event.getHook().sendMessageEmbeds(builder.build()).queue();
-            }
+            logger.info("Found skin URL: " + skinUrl);
+            BufferedImage skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
+
+            // Convert BufferedImage to byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            ImageIO.write(skin, "png", outputStream);
+            skinImageBytes = outputStream.toByteArray();
           }
         } catch (Exception e) {
           logger.log(Level.WARNING, "Failed to fetch player skin", e);
+          logger.log(Level.WARNING, "Exception details:", e);
         }
       }
 
@@ -162,7 +167,14 @@ public class DCmdUser implements DiscordCommand {
       builder.addField("Minecraft Username", "N/A", false);
     }
 
-    event.getHook().sendMessageEmbeds(builder.build()).queue();
+    logger.info("sending Message");
+    if (skinImageBytes != null) {
+      event.getHook().sendFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes, "skin.png"))
+        .addEmbeds(builder.build())
+        .queue();
+    } else {
+      event.getHook().sendMessageEmbeds(builder.build()).queue();
+    }
   }
 
   /**

@@ -10,7 +10,7 @@ public class RendererConfig {
   // Default values
   private int width = 300;
   private int height = 600;
-  private String modelPath = "/minecraft-steve/source/steve.glb";
+  private String modelPath = "minecraft-steve/source/steve.glb";
   private Vector3f backgroundColor = new Vector3f(0.1f, 0.1f, 0.1f);
   private Vector3f lightPosition = new Vector3f(10.0f, 10.0f, 50.0f);
   private Vector3f viewPosition = new Vector3f(0.0f, 20.0f, 30.0f);

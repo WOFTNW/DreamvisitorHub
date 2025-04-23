@@ -7,9 +7,6 @@
   <artifactId>DreamvisitorHub</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <modules>
-    <module>mc_renderer</module>
-  </modules>
   <name>DreamvisitorHub</name>
   <description>Dreamvisitor but better</description>
   <url />
