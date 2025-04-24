@@ -42,7 +42,7 @@ public class Bot {
   public static final List<Role> tribeRole = new ArrayList<>();
   static JDA jda;
   private static final Logger logger = Logger.getLogger("DreamvisitorHub");
-  public static final String CURRENCY_SYMBOL = "💎";
+  public static final String CURRENCY_SYMBOL = ":fire:";
   public static boolean botFailed;
   private static Map<String, Object> config;
 
@@ -221,6 +221,17 @@ public class Bot {
   @Contract("_, _ -> fail")
   public static Timestamp createTimestamp(@NotNull LocalDateTime dateTime, @NotNull TimeFormat format) {
     return format.atInstant(dateTime.toInstant(OffsetDateTime.now().getOffset()));
+  }
+
+  /**
+   * Formats a number with commas as thousands separators and 2 decimal places
+   *
+   * @param value The number to format
+   * @return A formatted string representation of the number
+   */
+  public static String formatCurrency(double value) {
+    java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,##0.00");
+    return formatter.format(value);
   }
 
   /**

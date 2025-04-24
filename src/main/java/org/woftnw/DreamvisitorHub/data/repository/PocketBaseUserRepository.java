@@ -13,6 +13,7 @@ import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -348,5 +349,18 @@ public class PocketBaseUserRepository implements UserRepository {
 
   private String formatDateTime(OffsetDateTime dateTime) {
     return dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+  }
+
+  @Override
+  public List<DVUser> getAllWhere(String filter) {
+    try {
+      List<JsonObject> records = pocketBase.getFullList(COLLECTION_NAME, 500, filter, null, null, null);
+      return records.stream()
+        .map(this::mapToUser)
+        .collect(Collectors.toList());
+    } catch (IOException e) {
+      LOGGER.log(Level.WARNING, "Error retrieving users with filter: " + filter, e);
+      return Collections.emptyList();
+    }
   }
 }

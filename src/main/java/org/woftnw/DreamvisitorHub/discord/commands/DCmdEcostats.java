@@ -47,7 +47,8 @@ public class DCmdEcostats implements DiscordCommand {
         .setDescription(
             "Here are your stats as of " + Bot.createTimestamp(LocalDateTime.now(), TimeFormat.DATE_TIME_SHORT) + ", "
                 + event.getUser().getAsMention() + ".")
-        .addField("Balance", Bot.CURRENCY_SYMBOL + " " + (user.getBalance() != null ? user.getBalance() : "0"), true)
+        .addField("Balance", Bot.CURRENCY_SYMBOL + " " +
+            (user.getBalance() != null ? Bot.formatCurrency(user.getBalance()) : "0.00"), true)
         .addField("Daily Streak", (user.getDaily_streak() != null ? user.getDaily_streak() : "0") + " days", true);
 
     int workCoolDown = Integer.parseInt((String) App.getConfig().get("work_cooldown"));

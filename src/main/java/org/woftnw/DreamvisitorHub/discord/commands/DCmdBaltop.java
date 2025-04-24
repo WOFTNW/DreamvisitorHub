@@ -1,116 +1,191 @@
-// package org.woftnw.DreamvisitorHub.discord.commands;
+package org.woftnw.DreamvisitorHub.discord.commands;
 
-// import io.github.stonley890.dreamvisitor.Dreamvisitor;
-// import io.github.stonley890.dreamvisitor.data.Economy;
-// import net.dv8tion.jda.api.EmbedBuilder;
-// import net.dv8tion.jda.api.entities.Member;
-// import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-// import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
-// import net.dv8tion.jda.api.interactions.commands.build.Commands;
-// import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
-// import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import org.jetbrains.annotations.NotNull;
+import org.woftnw.DreamvisitorHub.App;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.DreamvisitorHub.discord.Bot;
 
-// import java.util.*;
+import java.util.*;
 
-// public class DCmdBaltop implements DiscordCommand {
-//     @NotNull
-//     @Override
-//     public SlashCommandData getCommandData() {
-//         return Commands.slash("baltop", "Get the balances of the richest members.")
-//                 .setDefaultPermissions(DefaultMemberPermissions.ENABLED);
-//     }
+public class DCmdBaltop implements DiscordCommand {
+  private final UserRepository userRepository = new PocketBaseUserRepository(App.getPb());
 
-//     @Override
-//     public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+  @NotNull
+  @Override
+  public SlashCommandData getCommandData() {
+    return Commands.slash("baltop", "Get the balances of the richest members.")
+        .setDefaultPermissions(DefaultMemberPermissions.ENABLED);
+  }
 
-//         final String currencySymbol = Economy.getCurrencySymbol();
+  @Override
+  public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+    // Get all users from repository
+    List<DVUser> allUsers = userRepository.getAllWhere("-balance");
 
-//         List<Economy.Consumer> sortedConsumers = Economy.getConsumers();
-//         sortedConsumers.sort(Comparator.comparingDouble(Economy.Consumer::getBalance).reversed());
+    // Filter users with non-null balance and snowflake ID
+    List<DVUser> usersWithBalance = allUsers;
 
-//         if (Dreamvisitor.debugMode) {
-//             Dreamvisitor.debug("Sorted consumers: ");
-//             for (Economy.Consumer sortedConsumer : sortedConsumers) {
-//                 Dreamvisitor.debug(sortedConsumer.getId() + ": " + sortedConsumer.getBalance());
-//             }
-//         }
+    // // Sort by balance in descending order
+    // usersWithBalance.sort((user1, user2) -> {
+    // Double balance1 = user1.getBalance();
+    // Double balance2 = user2.getBalance();
+    // if (balance1 == null && balance2 == null)
+    // return 0;
+    // if (balance1 == null)
+    // return 1; // null values go last
+    // if (balance2 == null)
+    // return -1;
+    // return Double.compare(balance2, balance1); // descending order
+    // });
 
-//         final Economy.Consumer senderConsumer = Economy.getConsumer(event.getUser().getIdLong());
+    // Find the requesting user
+    long requesterId = event.getUser().getIdLong();
+    Optional<DVUser> requesterOpt = userRepository.findBySnowflakeId(requesterId);
 
-//         final int senderIndex = sortedConsumers.indexOf(senderConsumer);
-//         Dreamvisitor.debug("Sender index: " + senderIndex);
+    if (!requesterOpt.isPresent()) {
+      event.reply("You don't have a profile yet. Please connect your Minecraft account first.")
+          .setEphemeral(true)
+          .queue();
+      return;
+    }
 
-//         Economy.Consumer aboveSender = null;
-//         try {
-//             aboveSender = sortedConsumers.get(senderIndex - 1);
-//         } catch (IndexOutOfBoundsException ignored) {}
-//         Dreamvisitor.debug("Index above sender: " + (senderIndex - 1) + " id " + (aboveSender != null ? aboveSender.getId() : "null"));
+    DVUser requester = requesterOpt.get();
 
-//         Economy.Consumer belowSender = null;
-//         try {
-//             belowSender = sortedConsumers.get(senderIndex + 1);
-//         } catch (IndexOutOfBoundsException ignored) {}
-//         Dreamvisitor.debug("Index below sender: " + (senderIndex + 1) + " id " + (belowSender != null ? belowSender.getId() : "null"));
+    // Find the requester's position
+    int requesterIndex = -1;
+    for (int i = 0; i < usersWithBalance.size(); i++) {
+      if (usersWithBalance.get(i).getSnowflakeId() != null &&
+          usersWithBalance.get(i).getSnowflakeId() == requesterId) {
+        requesterIndex = i;
+        break;
+      }
+    }
 
-//         final EmbedBuilder embed = new EmbedBuilder();
-//         embed.setTitle("Top Balances");
+    // Get users above and below requester
+    DVUser aboveRequester = null;
+    if (requesterIndex > 0) {
+      aboveRequester = usersWithBalance.get(requesterIndex - 1);
+    }
 
-//         int numberShown = 10;
+    DVUser belowRequester = null;
+    if (requesterIndex >= 0 && requesterIndex < usersWithBalance.size() - 1) {
+      belowRequester = usersWithBalance.get(requesterIndex + 1);
+    }
 
-//         if (sortedConsumers.size() < numberShown) numberShown = sortedConsumers.size();
-//         Dreamvisitor.debug("Consumer list size: " + sortedConsumers.size());
+    // Create the embed
+    final EmbedBuilder embed = new EmbedBuilder();
+    embed.setTitle("Top Balances");
 
-//         final List<Long> retrieveIds = new ArrayList<>(sortedConsumers.subList(0, numberShown - 1).stream().map(Economy.Consumer::getId).toList());
-//         if (aboveSender != null) retrieveIds.add(aboveSender.getId());
-//         if (belowSender != null) retrieveIds.add(belowSender.getId());
+    // Determine how many users to show
+    int numberShown = Math.min(10, usersWithBalance.size());
 
-//         int finalNumberShown = numberShown;
-//         Economy.Consumer finalAboveSender = aboveSender;
-//         Economy.Consumer finalBelowSender = belowSender;
-//         Objects.requireNonNull(event.getGuild()).retrieveMembersByIds(retrieveIds).onSuccess(members -> {
+    // Get IDs to retrieve members
+    List<Long> retrieveIds = new ArrayList<>();
+    for (int i = 0; i < numberShown; i++) {
+      if (usersWithBalance.get(i).getSnowflakeId() != null) {
+        retrieveIds.add(usersWithBalance.get(i).getSnowflakeId());
+      }
+    }
 
-//             Map<Long, Member> memberMap = new HashMap<>();
-//             List<Member> topMembers = members.subList(0, finalNumberShown - 1);
-//             for (Member member : topMembers) {
-//                 memberMap.put(member.getIdLong(), member);
-//             }
+    // Add users above and below requester to the list if not already in top 10
+    if (aboveRequester != null && aboveRequester.getSnowflakeId() != null) {
+      retrieveIds.add(aboveRequester.getSnowflakeId());
+    }
 
-//             // Create a list to hold the sorted members
-//             List<Member> sortedMembers = new ArrayList<>();
+    if (belowRequester != null && belowRequester.getSnowflakeId() != null) {
+      retrieveIds.add(belowRequester.getSnowflakeId());
+    }
 
-//             // Add members to the sorted list in the order of consumer IDs
-//             for (Economy.Consumer consumer : sortedConsumers) {
-//                 Member member = memberMap.get(consumer.getId());
-//                 sortedMembers.add(member);
-//             }
+    // Final variables for use in lambda
+    final int finalRequesterIndex = requesterIndex;
+    final DVUser finalAboveRequester = aboveRequester;
+    final DVUser finalBelowRequester = belowRequester;
+    final List<DVUser> finalUsersWithBalance = usersWithBalance;
+    final int finalNumberShown = numberShown;
 
-//             final StringBuilder balanceList = new StringBuilder();
-//             for (int i = 0; i < finalNumberShown; i++) {
-//                 balanceList.append(i + 1).append(". ")
-//                         .append(currencySymbol).append(Economy.formatDouble(sortedConsumers.get(i).getBalance())).append(": ");
-//                 if (sortedMembers.get(i) == null) balanceList.append("<@").append(sortedConsumers.get(i).getId()).append(">");
-//                 else balanceList.append(sortedMembers.get(i).getAsMention()).append("\n");
-//             }
+    // Retrieve members and build the response
+    Objects.requireNonNull(event.getGuild()).retrieveMembersByIds(retrieveIds).onSuccess(members -> {
+      // Create member map for quick lookup
+      Map<Long, Member> memberMap = new HashMap<>();
+      for (Member member : members) {
+        memberMap.put(member.getIdLong(), member);
+      }
 
-//             if (finalNumberShown == 0) balanceList.append("No one has any ").append(Economy.getCurrencySymbol()).append(" yet!\n");
+      // Build the balance list
+      StringBuilder balanceList = new StringBuilder();
+      for (int i = 0; i < finalNumberShown; i++) {
+        DVUser user = finalUsersWithBalance.get(i);
+        if (user.getSnowflakeId() == null)
+          continue;
 
-//             if (senderConsumer.getBalance() != 0) {
-//                 balanceList.append("\nYour current rank is ").append(senderIndex + 1);
-//                 if (finalAboveSender != null) {
-//                     Optional<Member> member = members.stream().filter(thisMember -> thisMember.getIdLong() == finalAboveSender.getId()).findFirst();
-//                     member.ifPresent(value -> balanceList.append(", behind ").append(value.getAsMention()).append(" (").append(currencySymbol).append(finalAboveSender.getBalance()).append(")"));
-//                 }
-//                 if (finalBelowSender != null) {
-//                     Optional<Member> member = members.stream().filter(thisMember -> thisMember.getIdLong() == finalBelowSender.getId()).findFirst();
-//                     member.ifPresent(value -> balanceList.append(", ahead of ").append(value.getAsMention()).append(" (").append(currencySymbol).append(finalBelowSender.getBalance()).append(")"));
-//                 }
-//                 balanceList.append(".");
-//             }
+        balanceList.append(i + 1).append(". ")
+            .append(Bot.CURRENCY_SYMBOL)
+            .append(" ").append(Bot.formatCurrency(user.getBalance()))
+            .append(": ");
 
-//             embed.setDescription(balanceList).setFooter("Your current balance is " + Economy.formatDouble(senderConsumer.getBalance()) + ".");
-//             event.replyEmbeds(embed.build()).queue();
-//         });
+        Member member = memberMap.get(user.getSnowflakeId());
+        if (member != null) {
+          balanceList.append(member.getAsMention());
+        } else {
+          balanceList.append("<@").append(user.getSnowflakeId()).append(">");
+        }
+        balanceList.append("\n");
+      }
 
+      if (finalNumberShown == 0) {
+        balanceList.append("No one has any ").append(Bot.CURRENCY_SYMBOL).append(" yet!\n");
+      }
 
-//     }
-// }
+      // Add requester info if they have a balance
+      if (requester.getBalance() != null && requester.getBalance() > 0) {
+        balanceList.append("\nYour current rank is ").append(finalRequesterIndex + 1).append(",\n");
+
+        if (finalAboveRequester != null && finalAboveRequester.getSnowflakeId() != null) {
+          Member aboveMember = memberMap.get(finalAboveRequester.getSnowflakeId());
+          if (aboveMember != null) {
+            balanceList.append("behind ")
+                .append(aboveMember.getAsMention())
+                .append(" (")
+                .append(Bot.CURRENCY_SYMBOL)
+                .append(" ").append(Bot.formatCurrency(finalAboveRequester.getBalance()))
+                .append(")")
+                .append(" by ")
+                .append(Bot.formatCurrency(finalAboveRequester.getBalance() - requester.getBalance()) + " "
+                    + Bot.CURRENCY_SYMBOL);
+          }
+        }
+
+        if (finalBelowRequester != null && finalBelowRequester.getSnowflakeId() != null) {
+          Member belowMember = memberMap.get(finalBelowRequester.getSnowflakeId());
+          if (belowMember != null) {
+            balanceList.append(",\n ahead of ")
+                .append(belowMember.getAsMention())
+                .append(" (")
+                .append(Bot.CURRENCY_SYMBOL)
+                .append(" ").append(Bot.formatCurrency(finalBelowRequester.getBalance()))
+                .append(") ")
+                .append("by ")
+                .append(Bot.formatCurrency(requester.getBalance() - finalBelowRequester.getBalance()) + " "
+                    + Bot.CURRENCY_SYMBOL);
+
+          }
+        }
+
+        balanceList.append(".");
+      }
+
+      embed.setDescription(balanceList)
+          .setFooter("Your current balance is " +
+              (requester.getBalance() != null ? Bot.formatCurrency(requester.getBalance()) : "0.00"));
+      event.replyEmbeds(embed.build()).queue();
+    });
+  }
+}

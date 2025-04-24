@@ -66,9 +66,10 @@ public class DCmdWork extends ListenerAdapter implements DiscordCommand {
     userRepository.save(dvUser);
 
     embed
-        .setDescription("You earned " + Bot.CURRENCY_SYMBOL + " " + workReward + " by working.\nCome back in "
-            + workCoolDown + " minutes to work again.")
-        .setFooter("Your new balance is " + (Math.round(dvUser.getBalance() * 100.0) / 100.0))
+        .setDescription(
+            "You earned " + Bot.CURRENCY_SYMBOL + " " + Bot.formatCurrency(workReward) + " by working.\nCome back in "
+                + workCoolDown + " minutes to work again.")
+        .setFooter("Your new balance is " + Bot.formatCurrency(dvUser.getBalance()))
         .setColor(Color.GREEN);
     event.replyEmbeds(embed.build()).queue();
   }

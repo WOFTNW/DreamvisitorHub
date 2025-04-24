@@ -91,8 +91,9 @@ public class DCmdDaily implements DiscordCommand {
     // Send success message
     embedBuilder
         .setDescription(
-            "You earned " + Bot.CURRENCY_SYMBOL + " " + reward + " today.\nCome back tomorrow for your next reward.")
-        .setFooter("Your new balance is " + (Math.round(dvUser.getBalance() * 100.0) / 100.0) +
+            "You earned " + Bot.CURRENCY_SYMBOL + " " + Bot.formatCurrency(reward)
+                + " today.\nCome back tomorrow for your next reward.")
+        .setFooter("Your new balance is " + Bot.formatCurrency(dvUser.getBalance()) +
             "\nThis brings your streak to " + streak + " day(s).")
         .setColor(Color.GREEN);
     event.replyEmbeds(embedBuilder.build()).queue();

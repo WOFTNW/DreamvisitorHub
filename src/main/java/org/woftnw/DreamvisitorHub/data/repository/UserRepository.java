@@ -5,6 +5,7 @@ import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Repository interface for User data operations
@@ -78,4 +79,12 @@ public interface UserRepository {
    * @param id PocketBase ID of user to delete
    */
   void deleteById(String id);
+
+  /**
+   * Get all users that match a given condition
+   *
+   * @param predicate Condition to filter users
+   * @return List of users matching the condition
+   */
+  List<DVUser> getAllWhere(String filter);
 }
