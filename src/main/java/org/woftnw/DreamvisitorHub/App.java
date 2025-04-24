@@ -1,8 +1,12 @@
 package org.woftnw.DreamvisitorHub;
 
 import org.shanerx.mojang.Mojang;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseItemRepository;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserInventoryRepository;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.repository.ItemRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserInventoryRepository;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 import org.woftnw.DreamvisitorHub.util.ConfigLoader;
@@ -21,6 +25,8 @@ public class App {
   private static Mojang mojang;
   private static Map<String, Object> config;
   private static UserRepository userRepository;
+  private static ItemRepository itemRepository;
+  private static UserInventoryRepository userInventoryRepository;
 
   public static void main(String[] args) throws IOException {
     logger.info("Starting DreamvisitorHub...");
@@ -30,7 +36,12 @@ public class App {
 
     // Initialize PocketBase with the minimal configuration
     pb = PocketBase.fromConfig(initialConfig);
-    userRepository = new PocketBaseUserRepository(App.getPb());
+
+    // Initialize repositories
+    userRepository = new PocketBaseUserRepository(pb);
+    itemRepository = new PocketBaseItemRepository(pb);
+    userInventoryRepository = new PocketBaseUserInventoryRepository(pb, userRepository, itemRepository);
+
     mojang = new Mojang().connect();
     try {
       // Try to load configuration from PocketBase
@@ -75,7 +86,16 @@ public class App {
   public static Mojang getMojang() {
     return mojang;
   }
-  public static UserRepository getUserRepository(){
+
+  public static UserRepository getUserRepository() {
     return userRepository;
+  }
+
+  public static ItemRepository getItemRepository() {
+    return itemRepository;
+  }
+
+  public static UserInventoryRepository getUserInventoryRepository() {
+    return userInventoryRepository;
   }
 }

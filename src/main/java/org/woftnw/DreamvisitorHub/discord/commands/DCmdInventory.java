@@ -1,303 +1,116 @@
-// package org.woftnw.DreamvisitorHub.discord.commands;
+package org.woftnw.DreamvisitorHub.discord.commands;
 
-// import io.github.stonley890.dreamvisitor.Dreamvisitor;
-// import io.github.stonley890.dreamvisitor.data.Economy;
-// import net.dv8tion.jda.api.EmbedBuilder;
-// import net.dv8tion.jda.api.entities.Member;
-// import net.dv8tion.jda.api.entities.Mentions;
-// import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-// import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-// import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
-// import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
-// import net.dv8tion.jda.api.hooks.ListenerAdapter;
-// import net.dv8tion.jda.api.interactions.commands.build.Commands;
-// import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
-// import net.dv8tion.jda.api.interactions.components.ActionRow;
-// import net.dv8tion.jda.api.interactions.components.buttons.Button;
-// import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
-// import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-// import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-// import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import org.jetbrains.annotations.NotNull;
+import org.woftnw.DreamvisitorHub.App;
+import org.woftnw.DreamvisitorHub.data.repository.ItemRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserInventoryRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.DreamvisitorHub.data.type.Item;
+import org.woftnw.DreamvisitorHub.data.type.UserInventory;
+import org.woftnw.DreamvisitorHub.discord.Bot;
 
-// import java.awt.*;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.Objects;
+import java.awt.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
 
-// public class DCmdInventory extends ListenerAdapter implements DiscordCommand {
+public class DCmdInventory implements DiscordCommand {
+  private static final Logger LOGGER = Logger.getLogger(DCmdInventory.class.getName());
+  private final UserRepository userRepository = App.getUserRepository();
+  private final ItemRepository itemRepository = App.getItemRepository();
+  private final UserInventoryRepository userInventoryRepository = App.getUserInventoryRepository();
 
-//     @NotNull
-//     @Override
-//     public SlashCommandData getCommandData() {
-//         return Commands.slash("inventory", "View your inventory.");
-//     }
+  @NotNull
+  @Override
+  public SlashCommandData getCommandData() {
+    return Commands.slash("inventory", "View and manage your inventory");
+  }
 
-//     @Override
-//     public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+  @Override
+  public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+    handleViewInventory(event);
+  }
 
-//         Economy.Consumer consumer = Economy.getConsumer(event.getUser().getIdLong());
-//         Map<Integer, Integer> items = consumer.getItems();
+  private void handleViewInventory(SlashCommandInteractionEvent event) {
+    // Defer reply since this might take some time
+    event.deferReply().queue();
 
-//         EmbedBuilder embed = new EmbedBuilder();
-//         embed.setTitle("Your Inventory");
+    // Get target user (default to command user if not specified)
+    User targetUser = event.getOption("user", event.getUser(), OptionMapping::getAsUser);
+    long discordId = targetUser.getIdLong();
 
-//         if (items.isEmpty()) {
-//             embed.setDescription("You do not currently have any items. You can purchase items from the shop.");
-//             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
-//             return;
-//         }
+    // Find user in database
+    Optional<DVUser> userOptional = userRepository.findBySnowflakeId(discordId);
 
-//         embed = getInvEmbed(consumer);
+    if (!userOptional.isPresent()) {
+      event.getHook().sendMessage(targetUser.getAsMention() + " doesn't have a profile yet.")
+          .setEphemeral(true).queue();
+      return;
+    }
 
-//         if (embed.getFields().isEmpty()) {
-//             embed.setDescription("You do not currently have any items. You can purchase items from the shop.");
-//             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
-//             return;
-//         }
+    DVUser dvUser = userOptional.get();
 
-//         Button useItem = Button.primary("inv-" + consumer.getId() + "-use", "Use an Item");
-//         Button giftItem = Button.success("inv-" + consumer.getId() + "-gift", "Gift an Item");
+    // Get user's inventory items
+    List<UserInventory> inventoryItems = userInventoryRepository.findByUser(dvUser.getId());
+    LOGGER.info("user inventory:" + inventoryItems);
+    // Load related items
+    userInventoryRepository.loadRelatedItems(inventoryItems);
 
-//         event.replyEmbeds(embed.build()).addActionRow(useItem, giftItem).queue();
+    // Create embed for inventory display
+    EmbedBuilder embed = new EmbedBuilder();
+    embed.setTitle(targetUser.getName() + "'s Inventory");
+    embed.setThumbnail(targetUser.getEffectiveAvatarUrl());
+    embed.setColor(Color.BLUE);
 
-//     }
+    if (inventoryItems.isEmpty()) {
+      embed.setDescription("No items in inventory.");
+      // If no items, just send without buttons
+      event.getHook().sendMessageEmbeds(embed.build()).queue();
+    } else {
+      StringBuilder description = new StringBuilder();
+      description.append("Items in inventory: ").append(inventoryItems.size()).append("\n\n");
 
-//     @NotNull
-//     private static EmbedBuilder getInvEmbed(Economy.Consumer consumer) {
+      for (UserInventory inventoryItem : inventoryItems) {
+        Item item = inventoryItem.getCachedItem();
+        if (item != null) {
+          String itemName = item.getName() != null ? item.getName() : "Unknown Item";
+          int quantity = inventoryItem.getQuantity() != null ? inventoryItem.getQuantity() : 0;
 
-//         EmbedBuilder embed = new EmbedBuilder();
+          description.append("**").append(itemName).append("** x").append(quantity);
 
-//         List<Economy.ShopItem> shopItems = Economy.getItems();
-//         for (Economy.ShopItem shopItem : shopItems) {
-//             int quantityOfItem = consumer.getQuantityOfItem(shopItem.getId());
-//             if (quantityOfItem == 0) continue;
-//             String useNotice = "This item can be used.";
-//             String giftNotice = "This item cannot be gifted.";
-//             if (shopItem.isUseDisabled()) useNotice = "This item cannot be used.";
-//             if (shopItem.isGiftingEnabled()) giftNotice = "This item cannot be gifted.";
-//             embed.addField("**" + quantityOfItem + "** " + shopItem.getName(), useNotice + "\n" + giftNotice, true);
-//         }
+          // Add price if available
+          if (item.getPrice() != null) {
+            description.append(" (").append(Bot.CURRENCY_SYMBOL).append(" ")
+                .append(Bot.formatCurrency(item.getPrice())).append(")");
+          }
 
-//         return embed;
-//     }
+          String id = item.getId();
+          description.append("\n").append("• ").append(id);
 
-//     @Override
-//     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
-//         String id = event.getButton().getId();
-//         if (id == null) return;
+          description.append("\n\n");
+        }
+      }
 
-//         String[] split = id.split("-");
+      embed.setDescription(description.toString().trim());
 
-//         if (!id.startsWith("inv-")) return;
+      // Create buttons for use and gift actions
+      // TODO: handle interactions with the buttons
+      Button useButton = Button.primary("use_item", "Use Item");
+      Button giftButton = Button.secondary("gift_item", "Gift Item");
 
-//         long consumerId = Long.parseLong(split[1]);
-
-//         if (consumerId != event.getUser().getIdLong()) {
-//             event.reply("Only the invoker of this command can interact with this.").setEphemeral(true).queue();
-//             return;
-//         }
-
-//         Economy.Consumer consumer = Economy.getConsumer(consumerId);
-//         if (split[2].equals("use")) {
-//             StringSelectMenu.Builder selectMenu = StringSelectMenu.create("inv-" + consumerId + "-use");
-//             selectMenu.setPlaceholder("Select an item to use");
-//             for (Economy.ShopItem item : Economy.getItems()) {
-//                 if (consumer.getItemQuantity(item.getId()) > 0 && !item.isUseDisabled()) {
-//                     selectMenu.addOption(item.getName(), String.valueOf(item.getId()));
-//                 }
-//             }
-//             if (selectMenu.getOptions().isEmpty()) {
-//                 event.reply("You do not have any items you can use.").setEphemeral(true).queue();
-//                 return;
-//             }
-//             event.replyComponents(ActionRow.of(selectMenu.build())).setEphemeral(true).queue();
-//         } else if (split[2].equals("gift")) {
-//             StringSelectMenu.Builder selectMenu = StringSelectMenu.create("inv-" + consumerId + "-gift");
-//             selectMenu.setPlaceholder("Select an item to gift");
-//             for (Economy.ShopItem item : Economy.getItems()) {
-//                 if (consumer.getItemQuantity(item.getId()) > 0 && item.isGiftingEnabled()) {
-//                     Dreamvisitor.debug("adding " + item.getId() + " to gift list");
-//                     selectMenu.addOption(item.getName(), String.valueOf(item.getId()));
-//                 }
-//             }
-//             Dreamvisitor.debug("selectmenu size: " + selectMenu.getOptions().size());
-//             if (selectMenu.getOptions().isEmpty()) {
-//                 event.reply("You do not have any items you can gift.").setEphemeral(true).queue();
-//                 return;
-//             }
-//             event.replyComponents(ActionRow.of(selectMenu.build())).queue();
-//         }
-//     }
-
-//     @Override
-//     public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
-//         String id = event.getSelectMenu().getId();
-//         if (id == null) return;
-//         SelectOption selected = event.getSelectedOptions().get(0);
-
-//         String[] split = id.split("-");
-
-//         if (!id.startsWith("inv-")) return;
-
-//         long consumerId = Long.parseLong(split[1]);
-
-//         if (consumerId != event.getUser().getIdLong()) {
-//             event.reply("Only the invoker of this command can interact with this.").setEphemeral(true).queue();
-//             return;
-//         }
-
-//         Economy.Consumer consumer = Economy.getConsumer(consumerId);
-//         switch (split[2]) {
-//             case "use" -> {
-//                 EmbedBuilder embed = new EmbedBuilder();
-//                 embed.setColor(Color.RED);
-
-//                 int itemId = Integer.parseInt(selected.getValue());
-//                 Economy.ShopItem item = Economy.getItem(itemId);
-//                 if (item == null) {
-//                     event.replyEmbeds(embed.setDescription("That item could not be found.").build()).setEphemeral(true).queue();
-//                     return;
-//                 }
-//                 int itemQuantity = consumer.getItemQuantity(itemId);
-//                 if (itemQuantity < 1) {
-//                     event.replyEmbeds(embed.setDescription("You do not have any of that item to use!").build()).queue();
-//                     return;
-//                 }
-//                 if (item.isUseDisabled()) {
-//                     event.replyEmbeds(embed.setDescription("That item cannot be used.").build()).setEphemeral(true).queue();
-//                     return;
-//                 }
-
-//                 try {
-//                     item.use(Objects.requireNonNull(event.getMember()));
-//                 } catch (UnsupportedOperationException e) {
-//                     event.replyEmbeds(embed.setDescription(e.getMessage()).build()).setEphemeral(true).queue();
-//                     return;
-//                 }
-
-//                 consumer.setItemQuantity(itemId, itemQuantity - 1);
-//                 Economy.saveConsumer(consumer);
-
-//                 embed.setColor(Color.GREEN).setDescription("Used one " + item.getName() + "!")
-//                         .setFooter("You now have " + consumer.getQuantityOfItem(itemId) + " of this item left.");
-//                 event.replyEmbeds(embed.build()).queue();
-
-//                 EmbedBuilder invEmbed = new EmbedBuilder();
-//                 invEmbed.setTitle("Your Inventory");
-
-//                 Map<Integer, Integer> items = consumer.getItems();
-
-//                 if (items.isEmpty()) {
-//                     invEmbed.setDescription("You do not currently have any items. You can purchase items from the shop.");
-//                 } else {
-//                     invEmbed = getInvEmbed(consumer);
-//                     if (invEmbed.getFields().isEmpty()) {
-//                         invEmbed.setDescription("You do not currently have any items. You can purchase items from the shop.");
-//                     }
-//                 }
-
-//                 event.getMessage().editMessageEmbeds(invEmbed.build()).queue();
-
-//             }
-//             case "gift" -> {
-//                 EmbedBuilder embed = new EmbedBuilder();
-//                 embed.setColor(Color.RED);
-
-//                 int itemId = Integer.parseInt(selected.getValue());
-//                 Economy.ShopItem item = Economy.getItem(itemId);
-//                 if (item == null) {
-//                     event.replyEmbeds(embed.setDescription("That item could not be found.").build()).setEphemeral(true).queue();
-//                     return;
-//                 }
-//                 int itemQuantity = consumer.getItemQuantity(itemId);
-//                 if (itemQuantity < 1) {
-//                     event.replyEmbeds(embed.setDescription("You do not have any of that item to gift!").build()).queue();
-//                     return;
-//                 }
-//                 if (!item.isGiftingEnabled()) {
-//                     event.replyEmbeds(embed.setDescription("That item cannot be gifted.").build()).setEphemeral(true).queue();
-//                     return;
-//                 }
-
-//                 EntitySelectMenu.Builder selectMenu = EntitySelectMenu.create("inv-" + consumerId + "-giftItem-" + item.getId(), EntitySelectMenu.SelectTarget.USER);
-//                 selectMenu.setPlaceholder("Select a user to gift to").setRequiredRange(1, 1);
-
-//                 event.editComponents(event.getMessage().getComponents().get(0), ActionRow.of(selectMenu.build())).queue();
-//             }
-//         }
-//     }
-
-//     @Override
-//     public void onEntitySelectInteraction(@NotNull EntitySelectInteractionEvent event) {
-//         String id = event.getSelectMenu().getId();
-//         if (id == null) return;
-//         Dreamvisitor.debug("EntitySelectMenu with ID " + id);
-//         Mentions mentions = event.getMentions();
-
-//         String[] split = id.split("-");
-
-//         if (!id.startsWith("inv-")) return;
-
-//         long consumerId = Long.parseLong(split[1]);
-
-//         if (consumerId != event.getUser().getIdLong()) {
-//             event.reply("Only the invoker of this command can interact with this.").setEphemeral(true).queue();
-//             return;
-//         }
-
-//         Economy.Consumer consumer = Economy.getConsumer(consumerId);
-//         if (split[2].equals("giftItem")) {
-//             EmbedBuilder embed = new EmbedBuilder();
-//             embed.setColor(Color.RED);
-
-//             int itemId = Integer.parseInt(split[3]);
-//             Economy.ShopItem item = Economy.getItem(itemId);
-//             if (item == null) {
-//                 event.replyEmbeds(embed.setDescription("That item could not be found.").build()).setEphemeral(true).queue();
-//                 return;
-//             }
-//             int itemQuantity = consumer.getItemQuantity(itemId);
-//             if (itemQuantity < 1) {
-//                 event.replyEmbeds(embed.setDescription("You do not have any of that item to gift!").build()).queue();
-//                 return;
-//             }
-//             if (!item.isGiftingEnabled()) {
-//                 event.replyEmbeds(embed.setDescription("That item cannot be gifted.").build()).setEphemeral(true).queue();
-//                 return;
-//             }
-
-//             List<Member> members = mentions.getMembers();
-//             if (members.isEmpty()) {
-//                 event.reply("You did not select anyone.").setEphemeral(true).queue();
-//                 return;
-//             }
-
-//             Member member = members.get(0);
-
-//             Economy.Consumer consumer1 = Economy.getConsumer(member.getIdLong());
-//             consumer1.setItemQuantity(itemId, consumer1.getQuantityOfItem(itemId) + 1);
-//             consumer.setItemQuantity(itemId, consumer.getQuantityOfItem(itemId) - 1);
-
-//             Economy.saveConsumer(consumer);
-//             Economy.saveConsumer(consumer1);
-
-//             embed.setDescription(event.getUser().getAsMention() + " gifted one " + item.getName() + " to " + member.getAsMention() + ".")
-//                     .setColor(Color.GREEN).setFooter("You now have " + consumer.getQuantityOfItem(itemId) + " of this item left.");
-//             event.reply(member.getAsMention() + ", you were gifted an item!").addEmbeds(embed.build()).queue();
-
-//             EmbedBuilder invEmbed = new EmbedBuilder();
-//             invEmbed.setTitle("Your Inventory");
-
-//             Map<Integer, Integer> items = consumer.getItems();
-
-//             if (items.isEmpty()) {
-//                 invEmbed.setDescription("You do not currently have any items. You can purchase items from the shop.");
-//             } else {
-//                 invEmbed = getInvEmbed(consumer);
-//                 if (invEmbed.getFields().isEmpty()) {
-//                     invEmbed.setDescription("You do not currently have any items. You can purchase items from the shop.");
-//                 }
-//             }
-//         }
-//     }
-// }
+      // Send embed with buttons
+      event.getHook().sendMessageEmbeds(embed.build())
+          .addActionRow(useButton, giftButton)
+          .queue();
+    }
+  }
+}
