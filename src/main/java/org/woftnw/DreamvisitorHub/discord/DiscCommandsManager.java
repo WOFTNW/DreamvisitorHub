@@ -52,7 +52,7 @@ public class DiscCommandsManager extends ListenerAdapter {
     addList.add(new DCmdDaily());
     addList.add(new DCmdWork());
     addList.add(new DCmdBaltop());
-    // addList.add(new DCmdSeen());
+    addList.add(new DCmdSeen());
     // addList.add(new DCmdYear());
     System.out.println("Ready to add to guild.");
 
