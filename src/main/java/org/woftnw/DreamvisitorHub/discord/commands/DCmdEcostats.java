@@ -12,11 +12,11 @@ import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-
 
 public class DCmdEcostats implements DiscordCommand {
 
@@ -58,13 +58,22 @@ public class DCmdEcostats implements DiscordCommand {
 
     if (user.getLast_work() != null) {
       OffsetDateTime nextWorkTime = user.getLast_work().plusMinutes(workCoolDown);
+      OffsetDateTime now = OffsetDateTime.now();
 
-      if (OffsetDateTime.now().isAfter(nextWorkTime)) {
+      if (now.isAfter(nextWorkTime)) {
         timeUntilNextWork = "Available now";
       } else {
-        // Convert to LocalDateTime for Bot.createTimestamp
-        LocalDateTime nextWorkLocalTime = nextWorkTime.toLocalDateTime();
-        timeUntilNextWork = Bot.createTimestamp(nextWorkLocalTime, TimeFormat.RELATIVE).toString();
+        // Calculate remaining time in minutes and hours
+        Duration remainingTime = Duration.between(now, nextWorkTime);
+        long hours = remainingTime.toHours();
+        long minutes = remainingTime.toMinutes() % 60;
+
+        if (hours > 0) {
+          timeUntilNextWork = hours + " hour" + (hours > 1 ? "s" : "") +
+              (minutes > 0 ? " " + minutes + " minute" + (minutes > 1 ? "s" : "") : "");
+        } else {
+          timeUntilNextWork = minutes + " minute" + (minutes > 1 ? "s" : "");
+        }
       }
     } else {
       timeUntilNextWork = "Available now";
