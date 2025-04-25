@@ -46,7 +46,7 @@ public class DiscCommandsManager extends ListenerAdapter {
     // addList.add(new DCmdInfractions());
     addList.add(new DCmdBalance());
     addList.add(new DCmdInventory());
-    // addList.add(new DCmdShop());
+    addList.add(new DCmdShop());
     // addList.add(new DCmdEconomy());
     addList.add(new DCmdEcostats());
     addList.add(new DCmdDaily());
