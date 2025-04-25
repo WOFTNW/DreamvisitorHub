@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +32,10 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
   private final UserRepository userRepository = App.getUserRepository();
   private final UserInventoryRepository userInventoryRepository = App.getUserInventoryRepository();
   private static final String SHOP_NAME = "Dreamvisitor Shop";
+  private static final int ITEMS_PER_PAGE = 4;
+
+  // Store the current page each user is viewing
+  private final Map<Long, Integer> userPages = new HashMap<>();
 
   @NotNull
   @Override
@@ -40,21 +45,132 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
 
   @Override
   public void onCommand(@NotNull SlashCommandInteractionEvent event) {
-    EmbedBuilder embed = new EmbedBuilder();
-    embed.setTitle(SHOP_NAME);
-    embed.setColor(Color.YELLOW);
+    // Reset page to 1 when shop command is executed
+    userPages.put(event.getUser().getIdLong(), 1);
 
-    // Fetch all enabled items
-    List<Item> items = itemRepository.findAllEnabled();
+    // Display the first page
+    displayShopPage(event, 1);
+  }
 
-    // Create selection menu for purchase
-    StringSelectMenu.Builder purchaseMenu = StringSelectMenu.create("purchase");
+  /**
+   * Displays a specific page of the shop
+   *
+   * @param event The interaction event
+   * @param page  The page number to display
+   */
+  private void displayShopPage(SlashCommandInteractionEvent event, int page) {
+    // Get all enabled items
+    List<Item> allItems = itemRepository.findAllEnabled();
 
-    if (items.isEmpty()) {
+    // Handle empty shop
+    if (allItems.isEmpty()) {
+      EmbedBuilder embed = new EmbedBuilder();
+      embed.setTitle(SHOP_NAME);
+      embed.setColor(Color.YELLOW);
       embed.setDescription("There are no items currently for sale.");
       event.replyEmbeds(embed.build()).queue();
       return;
     }
+
+    // Calculate pagination
+    int totalItems = allItems.size();
+    int totalPages = (int) Math.ceil((double) totalItems / ITEMS_PER_PAGE);
+
+    // Ensure page is within valid range
+    page = Math.max(1, Math.min(page, totalPages));
+
+    // Update stored page
+    userPages.put(event.getUser().getIdLong(), page);
+
+    // Get items for the current page
+    int startIndex = (page - 1) * ITEMS_PER_PAGE;
+    int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+    List<Item> pageItems = allItems.subList(startIndex, endIndex);
+
+    // Create embed for the page
+    EmbedBuilder embed = createShopEmbed(pageItems, page, totalPages);
+
+    // Create purchase menu for the page
+    StringSelectMenu.Builder purchaseMenu = createPurchaseMenu(pageItems);
+
+    // Create navigation buttons
+    Button prevButton = Button.primary("shop_prev_page", "⬅️ Previous")
+        .withDisabled(page <= 1);
+    Button nextButton = Button.primary("shop_next_page", "Next ➡️")
+        .withDisabled(page >= totalPages);
+
+    // Send the message with navigation and item selection
+    event.replyEmbeds(embed.build())
+        .addActionRow(purchaseMenu.build())
+        .addActionRow(prevButton, nextButton)
+        .queue();
+  }
+
+  /**
+   * Updates a shop page display after button interaction
+   *
+   * @param event The button interaction event
+   * @param page  The page to display
+   */
+  private void updateShopPage(ButtonInteractionEvent event, int page) {
+    // Get all enabled items
+    List<Item> allItems = itemRepository.findAllEnabled();
+
+    // Handle empty shop
+    if (allItems.isEmpty()) {
+      EmbedBuilder embed = new EmbedBuilder();
+      embed.setTitle(SHOP_NAME);
+      embed.setColor(Color.YELLOW);
+      embed.setDescription("There are no items currently for sale.");
+      event.editMessageEmbeds(embed.build())
+          .setComponents()
+          .queue();
+      return;
+    }
+
+    // Calculate pagination
+    int totalItems = allItems.size();
+    int totalPages = (int) Math.ceil((double) totalItems / ITEMS_PER_PAGE);
+
+    // Ensure page is within valid range
+    page = Math.max(1, Math.min(page, totalPages));
+
+    // Update stored page
+    userPages.put(event.getUser().getIdLong(), page);
+
+    // Get items for the current page
+    int startIndex = (page - 1) * ITEMS_PER_PAGE;
+    int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+    List<Item> pageItems = allItems.subList(startIndex, endIndex);
+
+    // Create embed for the page
+    EmbedBuilder embed = createShopEmbed(pageItems, page, totalPages);
+
+    // Create purchase menu for the page
+    StringSelectMenu.Builder purchaseMenu = createPurchaseMenu(pageItems);
+
+    // Create navigation buttons
+    Button prevButton = Button.primary("shop_prev_page", "⬅️ Previous")
+        .withDisabled(page <= 1);
+    Button nextButton = Button.primary("shop_next_page", "Next ➡️")
+        .withDisabled(page >= totalPages);
+
+    // Update the message with new data - FIX: Use clearComponents() and
+    // addActionRow() to ensure all components are visible
+    event.editMessageEmbeds(embed.build())
+        .setComponents(
+            ActionRow.of(purchaseMenu.build()),
+            ActionRow.of(prevButton, nextButton))
+        .queue();
+  }
+
+  /**
+   * Creates the shop embed for a specific page
+   */
+  private EmbedBuilder createShopEmbed(List<Item> items, int currentPage, int totalPages) {
+    EmbedBuilder embed = new EmbedBuilder();
+    embed.setTitle(SHOP_NAME + " (Page " + currentPage + "/" + totalPages + ")");
+    embed.setColor(Color.YELLOW);
 
     for (Item item : items) {
       // Skip items with null properties
@@ -89,29 +205,61 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
               : "This item cannot be gifted.");
 
       embed.addField(header, body.toString(), false);
-
-      // Add to selection menu
-      purchaseMenu.addOption(
-          item.getName(),
-          item.getId(),
-          item.getId() + " - " + truePrice);
     }
 
-    event.reply("Here is what is currently available in the shop.")
-        .addEmbeds(embed.build())
-        .addActionRow(purchaseMenu.build())
-        .queue();
+    return embed;
+  }
+
+  /**
+   * Creates a purchase menu for the given items
+   */
+  private StringSelectMenu.Builder createPurchaseMenu(List<Item> items) {
+    StringSelectMenu.Builder purchaseMenu = StringSelectMenu.create("purchase")
+        .setPlaceholder("Select an item to purchase");
+
+    for (Item item : items) {
+      if (item.getName() != null && item.getPrice() != null) {
+        double truePrice = calculateTruePrice(item);
+        purchaseMenu.addOption(
+            item.getName(),
+            item.getId(),
+            item.getId() + " - " + Bot.formatCurrency(truePrice) + " " + Bot.CURRENCY_SYMBOL);
+      }
+    }
+
+    return purchaseMenu;
   }
 
   @Override
   public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
     String componentId = event.getComponentId();
 
-    if (!componentId.startsWith("purchase-")) {
-      return;
+    if (componentId.startsWith("purchase-")) {
+      handlePurchaseButton(event);
+    } else if (componentId.equals("shop_prev_page")) {
+      handleNavigationButton(event, -1);
+    } else if (componentId.equals("shop_next_page")) {
+      handleNavigationButton(event, 1);
     }
+  }
 
-    String itemId = componentId.substring("purchase-".length());
+  /**
+   * Handles navigation button clicks
+   */
+  private void handleNavigationButton(ButtonInteractionEvent event, int pageDelta) {
+    long userId = event.getUser().getIdLong();
+    int currentPage = userPages.getOrDefault(userId, 1);
+    int newPage = currentPage + pageDelta;
+
+    // Update the shop display with the new page
+    updateShopPage(event, newPage);
+  }
+
+  /**
+   * Handles purchase button clicks
+   */
+  private void handlePurchaseButton(ButtonInteractionEvent event) {
+    String itemId = event.getComponentId().substring("purchase-".length());
 
     try {
       // Get user
@@ -191,23 +339,57 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
 
       // 4. Handle item use if needed
       if (item.getUse_on_purchase() != null && item.getUse_on_purchase()) {
-        // Implementation would go here - could reuse code from DCmdInventory
         LOGGER.info("Item set to use on purchase, but this feature isn't implemented yet");
       }
 
-      // Send confirmation
-      EmbedBuilder embed = new EmbedBuilder();
-      embed.setTitle("Purchase successful!");
-      embed.setDescription("Purchased " + item.getName() + " for " + Bot.CURRENCY_SYMBOL + " " +
+      // Get the current page number
+      int currentPage = userPages.getOrDefault(discordId, 1);
+
+      // Get updated shop items for the current page
+      List<Item> allItems = itemRepository.findAllEnabled();
+      int totalItems = allItems.size();
+      int totalPages = (int) Math.ceil((double) totalItems / ITEMS_PER_PAGE);
+      currentPage = Math.max(1, Math.min(currentPage, totalPages));
+
+      int startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+      List<Item> pageItems = allItems.subList(startIndex, endIndex);
+
+      // Create updated shop embed
+      EmbedBuilder shopEmbed = createShopEmbed(pageItems, currentPage, totalPages);
+
+      // Send confirmation with updated shop info
+      EmbedBuilder purchaseEmbed = new EmbedBuilder();
+      purchaseEmbed.setTitle("Purchase successful!");
+      purchaseEmbed.setDescription("Purchased " + item.getName() + " for " + Bot.CURRENCY_SYMBOL + " " +
           Bot.formatCurrency(price) + ".");
 
       int newQuantity = getCurrentItemQuantity(user.getId(), itemId);
 
-      embed.setFooter("You now have " + newQuantity + " of this item.\nYour new balance is " +
+      purchaseEmbed.setFooter("You now have " + newQuantity + " of this item.\nYour new balance is " +
           Bot.formatCurrency(user.getBalance()) + " " + Bot.CURRENCY_SYMBOL);
-      embed.setColor(Color.GREEN);
+      purchaseEmbed.setColor(Color.GREEN);
 
-      event.replyEmbeds(embed.build()).queue();
+      // Create updated purchase menu
+      StringSelectMenu.Builder purchaseMenu = createPurchaseMenu(pageItems);
+
+      // Create navigation buttons
+      Button prevButton = Button.primary("shop_prev_page", "⬅️ Previous")
+          .withDisabled(currentPage <= 1);
+      Button nextButton = Button.primary("shop_next_page", "Next ➡️")
+          .withDisabled(currentPage >= totalPages);
+
+      // Send purchase confirmation as ephemeral message and update the shop display
+      event.replyEmbeds(purchaseEmbed.build())
+          .setEphemeral(true)
+          .queue();
+
+      // Edit the original message to update the shop display
+      event.getMessage().editMessageEmbeds(shopEmbed.build())
+          .setComponents(
+              ActionRow.of(purchaseMenu.build()),
+              ActionRow.of(prevButton, nextButton))
+          .queue();
 
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, "Error processing purchase", e);
