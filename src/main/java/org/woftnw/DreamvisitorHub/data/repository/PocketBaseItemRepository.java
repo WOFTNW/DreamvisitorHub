@@ -158,11 +158,13 @@ public class PocketBaseItemRepository implements ItemRepository {
     item.setMax_allowed(getIntOrNull(json, "max_allowed"));
     item.setUse_disabled(getBooleanOrNull(json, "use_disabled"));
     item.setUse_on_purchase(getBooleanOrNull(json, "use_on_purchase"));
-    item.setOn_use_groups_add(getStringOrNull(json, "on_use_groups_add"));
-    item.setOn_use_groups_remove(getStringOrNull(json, "on_use_groups_remove"));
-    item.setOn_use_roles_add(getStringOrNull(json, "on_use_roles_add"));
-    item.setOn_use_roles_remove(getStringOrNull(json, "on_use_roles_remove"));
-    item.setOn_use_console_commands(getStringOrNull(json, "on_use_console_commands"));
+
+    // For JSON fields that could be arrays, use getJsonArrayAsString
+    item.setOn_use_groups_add(getJsonArrayAsString(json, "on_use_groups_add"));
+    item.setOn_use_groups_remove(getJsonArrayAsString(json, "on_use_groups_remove"));
+    item.setOn_use_roles_add(getJsonArrayAsString(json, "on_use_roles_add"));
+    item.setOn_use_roles_remove(getJsonArrayAsString(json, "on_use_roles_remove"));
+    item.setOn_use_console_commands(getJsonArrayAsString(json, "on_use_console_commands"));
 
     item.setCreated(getOffsetDateTimeOrNull(json, "created"));
     item.setUpdated(getOffsetDateTimeOrNull(json, "updated"));
@@ -216,7 +218,17 @@ public class PocketBaseItemRepository implements ItemRepository {
 
   // Helper methods for extracting values from JsonObject
   private String getStringOrNull(JsonObject json, String key) {
-    return json.has(key) && !json.get(key).isJsonNull() ? json.get(key).getAsString() : null;
+    if (!json.has(key) || json.get(key).isJsonNull()) {
+      return null;
+    }
+
+    com.google.gson.JsonElement element = json.get(key);
+    if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+      return element.getAsString();
+    } else {
+      LOGGER.warning("Field " + key + " is not a string primitive: " + element);
+      return null;
+    }
   }
 
   private Integer getIntOrNull(JsonObject json, String key) {
@@ -278,5 +290,28 @@ public class PocketBaseItemRepository implements ItemRepository {
 
   private String formatDateTime(OffsetDateTime dateTime) {
     return dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+  }
+
+  /**
+   * Safely get a JSON array field as a JSON string
+   * Handles cases where the field could be a string, array, or other type
+   */
+  private String getJsonArrayAsString(JsonObject json, String key) {
+    if (!json.has(key) || json.get(key).isJsonNull()) {
+      return null;
+    }
+
+    com.google.gson.JsonElement element = json.get(key);
+    if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+      // It's already a string, return it directly
+      return element.getAsString();
+    } else if (element.isJsonArray()) {
+      // It's an array, convert to a well-formatted JSON string
+      return element.toString();
+    } else {
+      // For any other type, convert to string representation
+      LOGGER.warning("Field " + key + " is not a string or array: " + element);
+      return element.toString();
+    }
   }
 }

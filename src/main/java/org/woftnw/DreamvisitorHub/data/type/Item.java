@@ -19,8 +19,17 @@ public class Item {
   private Boolean use_on_purchase;
   private String on_use_groups_add; // JSON string
   private String on_use_groups_remove; // JSON string
-  private String on_use_roles_add; // JSON string
-  private String on_use_roles_remove; // JSON string
+
+  // JSON array of Discord role IDs to add when item is used
+  // Example format: ["123456789012345678", "234567890123456789"]
+  // These must be valid Discord role IDs from the server
+  private String on_use_roles_add;
+
+  // JSON array of Discord role IDs to remove when item is used
+  // Example format: ["123456789012345678", "234567890123456789"]
+  // These must be valid Discord role IDs from the server
+  private String on_use_roles_remove;
+
   private String on_use_console_commands; // JSON string
 
   private OffsetDateTime created;
