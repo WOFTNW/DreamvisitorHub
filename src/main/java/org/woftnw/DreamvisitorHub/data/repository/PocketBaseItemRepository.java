@@ -186,8 +186,18 @@ public class PocketBaseItemRepository implements ItemRepository {
       json.addProperty("name", item.getName());
     if (item.getDescription() != null)
       json.addProperty("description", item.getDescription());
-    if (item.getPrice() != null)
+
+    // Always include price even if it's 0.0 - PocketBase requires this field
+    // Previously we only included it if not null, but 0.0 might still be included
+    // in the JSON
+    if (item.getPrice() != null) {
       json.addProperty("price", item.getPrice());
+    } else {
+      // Set a default price of 0.0 if null to prevent validation errors
+      json.addProperty("price", 0.0);
+    }
+
+    // For all other optional fields, only include if not null
     if (item.getSale_percent() != null)
       json.addProperty("sale_percent", item.getSale_percent());
     if (item.getQuantity() != null)
