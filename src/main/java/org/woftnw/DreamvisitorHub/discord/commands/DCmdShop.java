@@ -31,7 +31,7 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
   private final ItemRepository itemRepository = App.getItemRepository();
   private final UserRepository userRepository = App.getUserRepository();
   private final UserInventoryRepository userInventoryRepository = App.getUserInventoryRepository();
-  private static final String SHOP_NAME = "Dreamvisitor Shop";
+  private static String SHOP_NAME = "Dreamvisitor Shop";
   private static final int ITEMS_PER_PAGE = 4;
 
   // Store the current page each user is viewing
@@ -45,6 +45,7 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
 
   @Override
   public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+    SHOP_NAME = (String) App.getConfig().get("shopName");
     // Reset page to 1 when shop command is executed
     userPages.put(event.getUser().getIdLong(), 1);
 

@@ -79,7 +79,7 @@ public class PBConfigLoader {
     renameField(config, "game_chat_channel", "chatChannelID");
     renameField(config, "game_log_channel", "logChannelID");
     renameField(config, "resource_pack_repo", "resourcePackRepo");
-
+    renameField(config, "shop_name", "shopName");
     // Ensure consistent handling of channel IDs
     ensureChannelIdFormat(config, "whitelistChannelID");
     ensureChannelIdFormat(config, "chatChannelID");
