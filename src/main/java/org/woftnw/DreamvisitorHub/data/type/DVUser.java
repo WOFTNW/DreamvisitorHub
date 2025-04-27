@@ -20,6 +20,7 @@ public class DVUser {
   private List<String> users_home;
   private List<String> inventory_items;
   private List<String> claims;
+  private List<String> alts; // Added alts field
 
   private Integer claim_limit;
   private Integer play_time;
@@ -140,6 +141,14 @@ public class DVUser {
 
   public void setClaims(List<String> claims) {
     this.claims = claims;
+  }
+
+  public List<String> getAlts() {
+    return alts;
+  }
+
+  public void setAlts(List<String> alts) {
+    this.alts = alts;
   }
 
   public Integer getClaim_limit() {

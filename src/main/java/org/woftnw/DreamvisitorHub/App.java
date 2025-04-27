@@ -5,10 +5,12 @@ import org.woftnw.DreamvisitorHub.data.repository.PocketBaseItemRepository;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserInventoryRepository;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseInfractionRepository;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseAltRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.ItemRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserInventoryRepository;
 import org.woftnw.DreamvisitorHub.data.repository.InfractionRepository;
+import org.woftnw.DreamvisitorHub.data.repository.AltRepository;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 import org.woftnw.DreamvisitorHub.util.ConfigLoader;
@@ -29,6 +31,7 @@ public class App {
   private static ItemRepository itemRepository;
   private static UserInventoryRepository userInventoryRepository;
   private static InfractionRepository infractionRepository;
+  private static AltRepository altRepository;
 
   public static void main(String[] args) throws IOException {
     logger.info("Starting DreamvisitorHub...");
@@ -104,5 +107,12 @@ public class App {
 
   public static InfractionRepository getInfractionRepository() {
     return infractionRepository;
+  }
+
+  public static AltRepository getAltRepository() {
+    if (altRepository == null) {
+      altRepository = new PocketBaseAltRepository(pb, getUserRepository());
+    }
+    return altRepository;
   }
 }

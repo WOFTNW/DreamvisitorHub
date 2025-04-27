@@ -1,9 +1,10 @@
 package org.woftnw.DreamvisitorHub.discord.commands;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -18,15 +19,20 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 import org.jetbrains.annotations.NotNull;
 import org.woftnw.DreamvisitorHub.App;
+import org.woftnw.DreamvisitorHub.data.repository.AltRepository;
 import org.woftnw.DreamvisitorHub.data.repository.InfractionRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.type.Alt;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import org.woftnw.DreamvisitorHub.data.type.Infraction;
+import org.woftnw.DreamvisitorHub.discord.Bot;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +40,7 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
   private static final Logger LOGGER = Logger.getLogger(DCmdInfractions.class.getName());
   private final UserRepository userRepository = App.getUserRepository();
   private final InfractionRepository infractionRepository = App.getInfractionRepository();
+  private final AltRepository altRepository = App.getAltRepository();
   long bannedRole = 0;
   long tempBanRole = 0;
 
@@ -54,22 +61,79 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
       return;
     }
 
+    // Defer reply immediately to avoid timeout and double reply issues
+    event.deferReply().queue();
+
     long userId = user.getIdLong();
 
-    // Find the user in the database
+    // First check if this user is an alt account, before looking for their profile
+    Optional<Alt> altOpt = altRepository.findBySnowflakeId(userId);
+    boolean isAlt = false;
+    String parentInfo = null;
+    DVUser parentUser = null;
+    User parentDiscordUser = null;
+
+    if (altOpt.isPresent()) {
+      // This user is an alt - get their parent
+      Alt alt = altOpt.get();
+      String parentId = alt.getParent();
+
+      if (parentId != null) {
+        // Get the parent user
+        Optional<DVUser> parentUserOpt = userRepository.findById(parentId);
+        if (parentUserOpt.isPresent()) {
+          parentUser = parentUserOpt.get();
+          isAlt = true;
+
+          // Get parent user's Discord info if available
+          String parentName = parentUser.getDiscord_username();
+
+          if (parentUser.getSnowflakeId() != null) {
+            try {
+              parentDiscordUser = Bot.getJda().retrieveUserById(parentUser.getSnowflakeId()).complete();
+              if (parentDiscordUser != null) {
+                parentName = parentDiscordUser.getName();
+              }
+            } catch (Exception e) {
+              LOGGER.log(Level.WARNING, "Could not retrieve parent user", e);
+            }
+          }
+
+          parentInfo = "This is an alt account of **" + parentName + "**. Showing main account infractions.";
+        }
+      }
+    }
+
+    // If we're dealing with an alt, use parent user's data
+    if (isAlt && parentUser != null) {
+      User displayUser = parentDiscordUser != null ? parentDiscordUser : user;
+      handleInfractions(event, parentUser, displayUser, true, parentInfo);
+      return;
+    }
+
+    // If not an alt, find the user in the database
     Optional<DVUser> userOpt = userRepository.findBySnowflakeId(userId);
     if (!userOpt.isPresent()) {
-      event.reply("That user doesn't have a profile yet.").setEphemeral(true).queue();
+      event.getHook().sendMessage("That user doesn't have a profile yet.").setEphemeral(true).queue();
       return;
     }
 
     DVUser dvUser = userOpt.get();
 
+    // Handle a regular user's infractions
+    handleInfractions(event, dvUser, user, false, null);
+  }
+
+  // Extract the infraction handling logic to a separate method
+  private void handleInfractions(@NotNull SlashCommandInteractionEvent event, DVUser dvUser, User discordUser,
+      boolean isAltParent, String altInfo) {
+    long userId = discordUser.getIdLong();
+
     // Get user's infractions
     List<Infraction> infractions = infractionRepository.findByUser(dvUser.getId());
 
     if (infractions.isEmpty()) {
-      event.reply(user.getName() + " has no recorded infractions.").queue();
+      event.getHook().sendMessage(discordUser.getName() + " has no recorded infractions.").queue();
       return;
     }
 
@@ -118,7 +182,7 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
         }
 
         // Add to expire dropdown if not expired
-        String shortId = infraction.getId().length() > 8 ? infraction.getId().substring(0, 8) : infraction.getId();
+        // String shortId = infraction.getId().length() > 8 ? infraction.getId().substring(0, 8) : infraction.getId();
         String reason = infraction.getReason() != null ? infraction.getReason() : "No reason provided";
         String shortReason = reason.length() > 30 ? reason.substring(0, 27) + "..." : reason;
 
@@ -129,7 +193,7 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
       }
 
       // Add to remove dropdown (all infractions)
-      String shortId = infraction.getId().length() > 8 ? infraction.getId().substring(0, 8) : infraction.getId();
+      // String shortId = infraction.getId().length() > 8 ? infraction.getId().substring(0, 8) : infraction.getId();
       String reason = infraction.getReason() != null ? infraction.getReason() : "No reason provided";
       String shortReason = reason.length() > 30 ? reason.substring(0, 27) + "..." : reason;
 
@@ -158,19 +222,29 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
           false);
     }
 
+    // Add title and description based on whether this is an alt parent
+    String title = isAltParent ? "Main Account Infractions" : "Infractions";
+    String description = "Infractions of " + discordUser.getAsMention() + ":";
+
+    // Add alt info if provided
+    if (altInfo != null) {
+      description += "\n\n" + altInfo;
+    }
+
     embed
-        .setTitle("Infractions")
-        .setDescription("Infractions of " + user.getAsMention() + ":")
-        .setAuthor(user.getName(), null, user.getAvatarUrl())
+        .setTitle(title)
+        .setDescription(description)
+        .setAuthor(discordUser.getName(), null, discordUser.getEffectiveAvatarUrl())
         .setFooter("The total value of valid infractions is " + totalActive + ".\n" +
             "The total value of all infractions is " + totalAll + ".");
 
     // Build response with appropriate components
     boolean hasActiveInfractions = totalActive > 0;
 
-    // Only add expiration dropdown if there are valid infractions to expire
+    // Use event.getHook() instead of event.reply since we already deferred the
+    // reply
     if (hasActiveInfractions) {
-      event.replyEmbeds(embed.build())
+      event.getHook().sendMessageEmbeds(embed.build())
           .addActionRow(expireMenu.build())
           .addActionRow(removeMenu.build())
           .addActionRow(primary, danger)
@@ -178,7 +252,7 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
           .queue();
     } else {
       // Only add remove dropdown since no active infractions
-      event.replyEmbeds(embed.build())
+      event.getHook().sendMessageEmbeds(embed.build())
           .addActionRow(removeMenu.build())
           .addActionRow(danger)
           .addActionRow(noBan, tempBan, fullBan)
@@ -408,122 +482,194 @@ public class DCmdInfractions extends ListenerAdapter implements DiscordCommand {
       return;
     }
 
-    DVUser dvUser = userOpt.get();
+    DVUser targetUser = userOpt.get();
+    event.deferReply().queue(); // Defer the reply as this might take a while
 
-    // Update ban status
-    switch (banType) {
-      case "none":
-        dvUser.setIs_banned(false);
-        dvUser.setIs_suspended(false);
-        break;
-      case "temp":
-        dvUser.setIs_banned(false);
-        dvUser.setIs_suspended(true);
-        break;
-      case "full":
-        dvUser.setIs_banned(true);
-        dvUser.setIs_suspended(false);
-        break;
-      default:
-        event.reply("Invalid ban type.").setEphemeral(true).queue();
-        return;
+    // Collect all accounts to update (main account + all alts)
+    Set<DVUser> accountsToUpdate = new HashSet<>();
+    Set<Long> discordIdsToUpdate = new HashSet<>();
+    boolean isAlt = false;
+    DVUser mainAccount = targetUser;
+
+    // Check if the target user is an alt account
+    Optional<Alt> asAltOpt = altRepository.findBySnowflakeId(userId);
+    if (asAltOpt.isPresent()) {
+      // This user is an alt - get their parent
+      Alt altRecord = asAltOpt.get();
+      String parentId = altRecord.getParent();
+      isAlt = true;
+
+      if (parentId != null) {
+        Optional<DVUser> parentOpt = userRepository.findById(parentId);
+        if (parentOpt.isPresent()) {
+          mainAccount = parentOpt.get(); // Set the main account
+          LOGGER.info("User is an alt account, found parent: " + parentId);
+        } else {
+          LOGGER.warning("Alt's parent account not found: " + parentId);
+        }
+      }
     }
 
-    // Save user and Add Role
-    try {
-      userRepository.save(dvUser);
+    // Add the main account to the update list
+    accountsToUpdate.add(mainAccount);
+    if (mainAccount.getSnowflakeId() != null) {
+      discordIdsToUpdate.add(mainAccount.getSnowflakeId());
+    }
 
-      // Get Discord user info for the response
-      net.dv8tion.jda.api.entities.User discordUser = event.getJDA().retrieveUserById(userId).complete();
-      String username = discordUser != null ? discordUser.getName() : "Unknown User";
+    // Find all alt accounts and add them to the update list
+    List<Alt> altAccounts = altRepository.findByParentId(mainAccount.getId());
+    LOGGER.info("Found " + altAccounts.size() + " alt accounts for main account: " + mainAccount.getId());
 
-      // Add or remove roles based on ban type
-      net.dv8tion.jda.api.entities.Member member = event.getGuild().retrieveMemberById(userId).complete();
-      if (member != null) {
-        try {
-          // Get role objects with proper error checking
-          Role bannedRoleObj = null;
-          Role tempBanRoleObj = null;
+    for (Alt alt : altAccounts) {
+      if (alt.getSnowflakeId() != null) {
+        discordIdsToUpdate.add(alt.getSnowflakeId());
 
-          if (bannedRole != 0) {
-            bannedRoleObj = event.getGuild().getRoleById(bannedRole);
-            if (bannedRoleObj == null) {
-              LOGGER.warning("Banned role with ID " + bannedRole + " not found in guild");
-            }
-          }
+        // If the alt has a profile, add it to accounts to update
+        Optional<DVUser> altUserOpt = userRepository.findBySnowflakeId(alt.getSnowflakeId());
+        altUserOpt.ifPresent(accountsToUpdate::add);
+      }
+    }
 
-          if (tempBanRole != 0) {
-            tempBanRoleObj = event.getGuild().getRoleById(tempBanRole);
-            if (tempBanRoleObj == null) {
-              LOGGER.warning("Temp ban role with ID " + tempBanRole + " not found in guild");
-            }
-          }
+    LOGGER.info("Will update ban status for " + accountsToUpdate.size() + " database accounts and " +
+        discordIdsToUpdate.size() + " Discord accounts");
 
-          switch (banType) {
-            case "none":
-              if (bannedRoleObj != null && member.getRoles().contains(bannedRoleObj)) {
-                event.getGuild().removeRoleFromMember(member, bannedRoleObj).queue(
-                    success -> LOGGER.info("Removed banned role from " + username),
-                    error -> LOGGER.warning("Failed to remove banned role: " + error.getMessage()));
-              }
+    // Update ban status for all accounts
+    for (DVUser user : accountsToUpdate) {
+      switch (banType) {
+        case "none":
+          user.setIs_banned(false);
+          user.setIs_suspended(false);
+          break;
+        case "temp":
+          user.setIs_banned(false);
+          user.setIs_suspended(true);
+          break;
+        case "full":
+          user.setIs_banned(true);
+          user.setIs_suspended(false);
+          break;
+        default:
+          event.getHook().sendMessage("Invalid ban type.").setEphemeral(true).queue();
+          return;
+      }
 
-              if (tempBanRoleObj != null && member.getRoles().contains(tempBanRoleObj)) {
-                event.getGuild().removeRoleFromMember(member, tempBanRoleObj).queue(
-                    success -> LOGGER.info("Removed temp ban role from " + username),
-                    error -> LOGGER.warning("Failed to remove temp ban role: " + error.getMessage()));
-              }
-              break;
+      try {
+        userRepository.save(user);
+        LOGGER.info("Updated ban status for user: " + user.getId());
+      } catch (Exception e) {
+        LOGGER.log(Level.SEVERE, "Error updating ban status for " + user.getId(), e);
+      }
+    }
 
-            case "temp":
-              if (tempBanRoleObj != null && !member.getRoles().contains(tempBanRoleObj)) {
-                event.getGuild().addRoleToMember(member, tempBanRoleObj).queue(
-                    success -> LOGGER.info("Added temp ban role to " + username),
-                    error -> LOGGER.warning("Failed to add temp ban role: " + error.getMessage()));
-              }
+    // Apply roles to all accounts that are in the guild
+    applyRolesToAccounts(event, discordIdsToUpdate, banType);
 
-              if (bannedRoleObj != null && member.getRoles().contains(bannedRoleObj)) {
-                event.getGuild().removeRoleFromMember(member, bannedRoleObj).queue(
-                    success -> LOGGER.info("Removed banned role from " + username),
-                    error -> LOGGER.warning("Failed to remove banned role: " + error.getMessage()));
-              }
-              break;
+    // Prepare status message
+    String statusAction;
+    if (banType.equals("none")) {
+      statusAction = "unbanned";
+    } else if (banType.equals("temp")) {
+      statusAction = "temporarily banned";
+    } else {
+      statusAction = "permanently banned";
+    }
 
-            case "full":
-              if (bannedRoleObj != null && !member.getRoles().contains(bannedRoleObj)) {
-                event.getGuild().addRoleToMember(member, bannedRoleObj).queue(
-                    success -> LOGGER.info("Added banned role to " + username),
-                    error -> LOGGER.warning("Failed to add banned role: " + error.getMessage()));
-              }
+    String statusMessage;
+    if (isAlt) {
+      statusMessage = "The main account and all linked alt accounts (" + discordIdsToUpdate.size() +
+          " total accounts) have been " + statusAction + ".";
+    } else {
+      statusMessage = "This account and all its alts (" + discordIdsToUpdate.size() +
+          " total accounts) have been " + statusAction + ".";
+    }
 
-              if (tempBanRoleObj != null && member.getRoles().contains(tempBanRoleObj)) {
-                event.getGuild().removeRoleFromMember(member, tempBanRoleObj).queue(
-                    success -> LOGGER.info("Removed temp ban role from " + username),
-                    error -> LOGGER.warning("Failed to remove temp ban role: " + error.getMessage()));
-              }
-              break;
-          }
-        } catch (Exception e) {
-          LOGGER.log(Level.SEVERE, "Error managing roles", e);
+    event.getHook().sendMessage(statusMessage).queue();
+  }
+
+  private void applyRolesToAccounts(ButtonInteractionEvent event, Set<Long> discordIds, String banType) {
+    Guild guild = event.getGuild();
+    if (guild == null) {
+      LOGGER.warning("Guild is null, cannot apply roles");
+      return;
+    }
+
+    // Get role objects
+    Role bannedRoleObj = null;
+    Role tempBanRoleObj = null;
+
+    if (bannedRole != 0) {
+      bannedRoleObj = guild.getRoleById(bannedRole);
+      if (bannedRoleObj == null) {
+        LOGGER.warning("Banned role with ID " + bannedRole + " not found in guild");
+      }
+    }
+
+    if (tempBanRole != 0) {
+      tempBanRoleObj = guild.getRoleById(tempBanRole);
+      if (tempBanRoleObj == null) {
+        LOGGER.warning("Temp ban role with ID " + tempBanRole + " not found in guild");
+      }
+    }
+
+    // Process each Discord ID
+    for (Long discordId : discordIds) {
+      try {
+        // Retrieve the member
+        Member member = guild.retrieveMemberById(discordId).complete();
+        if (member == null) {
+          LOGGER.info("Member with ID " + discordId + " not found in guild");
+          continue;
         }
-      } else {
-        LOGGER.warning("Could not find member with ID " + userId + " in guild");
+
+        String username = member.getUser().getName();
+        LOGGER.info("Processing roles for member: " + username);
+
+        switch (banType) {
+          case "none":
+            if (bannedRoleObj != null && member.getRoles().contains(bannedRoleObj)) {
+              guild.removeRoleFromMember(member, bannedRoleObj).queue(
+                  success -> LOGGER.info("Removed banned role from " + username),
+                  error -> LOGGER.warning("Failed to remove banned role: " + error.getMessage()));
+            }
+
+            if (tempBanRoleObj != null && member.getRoles().contains(tempBanRoleObj)) {
+              guild.removeRoleFromMember(member, tempBanRoleObj).queue(
+                  success -> LOGGER.info("Removed temp ban role from " + username),
+                  error -> LOGGER.warning("Failed to remove temp ban role: " + error.getMessage()));
+            }
+            break;
+
+          case "temp":
+            if (tempBanRoleObj != null && !member.getRoles().contains(tempBanRoleObj)) {
+              guild.addRoleToMember(member, tempBanRoleObj).queue(
+                  success -> LOGGER.info("Added temp ban role to " + username),
+                  error -> LOGGER.warning("Failed to add temp ban role: " + error.getMessage()));
+            }
+
+            if (bannedRoleObj != null && member.getRoles().contains(bannedRoleObj)) {
+              guild.removeRoleFromMember(member, bannedRoleObj).queue(
+                  success -> LOGGER.info("Removed banned role from " + username),
+                  error -> LOGGER.warning("Failed to remove banned role: " + error.getMessage()));
+            }
+            break;
+
+          case "full":
+            if (bannedRoleObj != null && !member.getRoles().contains(bannedRoleObj)) {
+              guild.addRoleToMember(member, bannedRoleObj).queue(
+                  success -> LOGGER.info("Added banned role to " + username),
+                  error -> LOGGER.warning("Failed to add banned role: " + error.getMessage()));
+            }
+
+            if (tempBanRoleObj != null && member.getRoles().contains(tempBanRoleObj)) {
+              guild.removeRoleFromMember(member, tempBanRoleObj).queue(
+                  success -> LOGGER.info("Removed temp ban role from " + username),
+                  error -> LOGGER.warning("Failed to remove temp ban role: " + error.getMessage()));
+            }
+            break;
+        }
+      } catch (Exception e) {
+        LOGGER.log(Level.WARNING, "Error processing roles for Discord ID: " + discordId, e);
       }
-
-      // Prepare status message
-      String statusMessage;
-      if (banType.equals("none")) {
-        statusMessage = username + " is now unbanned.";
-      } else if (banType.equals("temp")) {
-        statusMessage = username + " is now temporarily banned.";
-      } else {
-        statusMessage = username + " is now permanently banned.";
-      }
-
-      event.reply(statusMessage).queue();
-
-    } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, "Error updating ban status", e);
-      event.reply("An error occurred while updating ban status: " + e.getMessage()).setEphemeral(true).queue();
     }
   }
 
