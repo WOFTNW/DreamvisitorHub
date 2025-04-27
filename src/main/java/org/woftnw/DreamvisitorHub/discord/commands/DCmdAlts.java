@@ -228,35 +228,23 @@ public class DCmdAlts extends net.dv8tion.jda.api.hooks.ListenerAdapter implemen
     // Defer reply since this might take time
     event.deferReply().queue();
 
-    // Get DVUser objects for both users
-    Optional<DVUser> parentDVUserOpt = userRepository.findBySnowflakeId(parentUser.getIdLong());
-    Optional<DVUser> childDVUserOpt = userRepository.findBySnowflakeId(childUser.getIdLong());
-
-    // Create users if they don't exist
-    DVUser parentDVUser;
-    DVUser childDVUser;
-
-    if (!parentDVUserOpt.isPresent()) {
-      parentDVUser = createNewUser(parentUser);
-    } else {
-      parentDVUser = parentDVUserOpt.get();
-    }
-
-    if (!childDVUserOpt.isPresent()) {
-      childDVUser = createNewUser(childUser);
-    } else {
-      childDVUser = childDVUserOpt.get();
-    }
-
-    // Check if child is already an alt
+    // First check if the child user is already an alt of ANY user
     Optional<Alt> existingChildAltOpt = altRepository.findBySnowflakeId(childUser.getIdLong());
     if (existingChildAltOpt.isPresent()) {
       Alt existingAlt = existingChildAltOpt.get();
       String currentParentId = existingAlt.getParent();
 
-      if (currentParentId != null && !currentParentId.equals(parentDVUser.getId())) {
+      if (currentParentId != null) {
         Optional<DVUser> currentParentOpt = userRepository.findById(currentParentId);
         String currentParentName = currentParentOpt.map(DVUser::getDiscord_username).orElse("Unknown");
+
+        // If the alt is already linked to the same parent, just inform the user and
+        // exit
+        if (currentParentId.equals(userRepository.findBySnowflakeId(parentUser.getIdLong())
+            .map(DVUser::getId).orElse(null))) {
+          event.getHook().sendMessage("This user is already linked as an alt of " + currentParentName + ".").queue();
+          return;
+        }
 
         event.getHook().sendMessage("This user is already linked as an alt to " + currentParentName +
             ". Please unlink it first.").queue();
@@ -280,6 +268,33 @@ public class DCmdAlts extends net.dv8tion.jda.api.hooks.ListenerAdapter implemen
       }
     }
 
+    // Get DVUser objects for both users
+    Optional<DVUser> parentDVUserOpt = userRepository.findBySnowflakeId(parentUser.getIdLong());
+    Optional<DVUser> childDVUserOpt = userRepository.findBySnowflakeId(childUser.getIdLong());
+
+    // Create users if they don't exist
+    DVUser parentDVUser;
+    DVUser childDVUser;
+
+    try {
+      if (!parentDVUserOpt.isPresent()) {
+        parentDVUser = createNewUser(parentUser);
+      } else {
+        parentDVUser = parentDVUserOpt.get();
+      }
+
+      if (!childDVUserOpt.isPresent()) {
+        childDVUser = createNewUser(childUser);
+      } else {
+        childDVUser = childDVUserOpt.get();
+      }
+    } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, "Error creating user profile", e);
+      event.getHook().sendMessage("Failed to create user profile: " + e.getMessage() +
+          "\nPlease make sure both users have valid profiles before linking.").queue();
+      return;
+    }
+
     // Create or update the alt record
     Alt childAlt;
     if (existingChildAltOpt.isPresent()) {
@@ -291,43 +306,49 @@ public class DCmdAlts extends net.dv8tion.jda.api.hooks.ListenerAdapter implemen
     }
 
     childAlt.setParent(parentDVUser.getId());
-    Alt savedAlt = altRepository.save(childAlt);
 
-    // Update the parent's alts list
-    List<String> parentAlts = parentDVUser.getAlts();
-    if (parentAlts == null) {
-      parentAlts = new ArrayList<>();
-    }
+    try {
+      Alt savedAlt = altRepository.save(childAlt);
 
-    if (!parentAlts.contains(savedAlt.getId())) {
-      parentAlts.add(savedAlt.getId());
-      parentDVUser.setAlts(parentAlts);
-      userRepository.save(parentDVUser);
-    }
-
-    // Transfer any infractions from child to parent
-    List<Infraction> childInfractions = infractionRepository.findByUser(childDVUser.getId());
-    if (!childInfractions.isEmpty()) {
-      for (Infraction infraction : childInfractions) {
-        // Update the user reference to the parent
-        infraction.setUser(parentDVUser.getId());
-        // Add a note that this was transferred from an alt
-        String currentReason = infraction.getReason() != null ? infraction.getReason() : "";
-        infraction.setReason(currentReason + "\n[Transferred from alt account: " + childUser.getName() + "]");
-        // Save the updated infraction
-        infractionRepository.save(infraction);
+      // Update the parent's alts list
+      List<String> parentAlts = parentDVUser.getAlts();
+      if (parentAlts == null) {
+        parentAlts = new ArrayList<>();
       }
 
-      // Clear the child's infractions list
-      if (childDVUser.getInfractions() != null) {
-        childDVUser.setInfractions(new ArrayList<>());
-        userRepository.save(childDVUser);
+      if (!parentAlts.contains(savedAlt.getId())) {
+        parentAlts.add(savedAlt.getId());
+        parentDVUser.setAlts(parentAlts);
+        userRepository.save(parentDVUser);
       }
-    }
 
-    // Send success message
-    event.getHook().sendMessage("Successfully linked " + childUser.getAsMention() +
-        " as an alt account of " + parentUser.getAsMention() + ".").queue();
+      // Transfer any infractions from child to parent
+      List<Infraction> childInfractions = infractionRepository.findByUser(childDVUser.getId());
+      if (!childInfractions.isEmpty()) {
+        for (Infraction infraction : childInfractions) {
+          // Update the user reference to the parent
+          infraction.setUser(parentDVUser.getId());
+          // Add a note that this was transferred from an alt
+          String currentReason = infraction.getReason() != null ? infraction.getReason() : "";
+          infraction.setReason(currentReason + "\n[Transferred from alt account: " + childUser.getName() + "]");
+          // Save the updated infraction
+          infractionRepository.save(infraction);
+        }
+
+        // Clear the child's infractions list
+        if (childDVUser.getInfractions() != null) {
+          childDVUser.setInfractions(new ArrayList<>());
+          userRepository.save(childDVUser);
+        }
+      }
+
+      // Send success message
+      event.getHook().sendMessage("Successfully linked " + childUser.getAsMention() +
+          " as an alt account of " + parentUser.getAsMention() + ".").queue();
+    } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, "Error linking alt account", e);
+      event.getHook().sendMessage("Failed to link alt account: " + e.getMessage()).queue();
+    }
   }
 
   private void handleUnlinkAlt(SlashCommandInteractionEvent event) {
@@ -396,11 +417,20 @@ public class DCmdAlts extends net.dv8tion.jda.api.hooks.ListenerAdapter implemen
   }
 
   private DVUser createNewUser(User discordUser) {
-    DVUser newUser = new DVUser();
-    newUser.setDiscord_id(discordUser.getId());
-    newUser.setDiscord_username(discordUser.getName());
-    newUser.setSnowflakeId(discordUser.getIdLong());
-    newUser.setDiscord_img(discordUser.getEffectiveAvatarUrl());
-    return userRepository.save(newUser);
+    try {
+      DVUser newUser = new DVUser();
+      newUser.setDiscord_id(discordUser.getId());
+      newUser.setDiscord_username(discordUser.getName());
+      newUser.setSnowflakeId(discordUser.getIdLong());
+      newUser.setDiscord_img(discordUser.getEffectiveAvatarUrl());
+
+      // Set a placeholder for required fields
+      newUser.setMcUsername("pending_" + discordUser.getId()); // Ensures mc_username isn't blank
+
+      return userRepository.save(newUser);
+    } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, "Failed to create user profile for " + discordUser.getName(), e);
+      throw new RuntimeException("Failed to create user profile: " + e.getMessage(), e);
+    }
   }
 }

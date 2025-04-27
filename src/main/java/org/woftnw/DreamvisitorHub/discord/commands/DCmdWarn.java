@@ -169,7 +169,7 @@ public class DCmdWarn implements DiscordCommand {
           totalInfractionValue += activeInfraction.getValue();
         }
       }
-      LOGGER.info("User " + effectiveUser.getId() + " has " + totalInfractionValue + " total active infraction points");
+      LOGGER.info("User " + effectiveUser.getId() + " has " + totalInfractionValue + " total active infraction warns");
 
       // Check if thresholds are exceeded and update ban status
       boolean wasBanned = mainUser.getIs_banned() != null && mainUser.getIs_banned();
@@ -222,7 +222,7 @@ public class DCmdWarn implements DiscordCommand {
           applyRolesToAccounts(event.getGuild(), discordIdsToUpdate, "full", specialActionMsg);
 
           specialActionMsg.append("User now has ").append(totalInfractionValue)
-              .append(" active infraction points and ").append(accountsToUpdate.size())
+              .append(" active infraction warns and ").append(accountsToUpdate.size())
               .append(" accounts have been **banned**.");
         } else if (shouldBeTempBanned) {
           // Temp ban for all accounts
@@ -236,11 +236,11 @@ public class DCmdWarn implements DiscordCommand {
           applyRolesToAccounts(event.getGuild(), discordIdsToUpdate, "temp", specialActionMsg);
 
           specialActionMsg.append("User now has ").append(totalInfractionValue)
-              .append(" active infraction points and ").append(accountsToUpdate.size())
+              .append(" active infraction warns and ").append(accountsToUpdate.size())
               .append(" accounts have been **temporarily banned**.");
         }
       } else {
-        specialActionMsg.append("User now has ").append(totalInfractionValue).append(" active infraction points.");
+        specialActionMsg.append("User now has ").append(totalInfractionValue).append(" active infraction warns.");
       }
 
       // Inform moderator
@@ -402,19 +402,19 @@ public class DCmdWarn implements DiscordCommand {
         .setDescription("You have received a warning on the DreamvisitorHub server.")
         .addField("Reason", reason, false)
         .addField("Value", Integer.toString(value), true)
-        .addField("Total Active Points", Integer.toString(totalValue), true)
+        .addField("Total Active Warns", Integer.toString(totalValue), true)
         .setColor(Color.RED)
         .setTimestamp(Instant.now());
 
     if (isBanned) {
-      dmEmbed.addField("Status", "You have been banned from the server due to accumulating too many warning points.",
+      dmEmbed.addField("Status", "You have been banned from the server due to accumulating too many warns.",
           false);
     } else if (isTempBanned) {
-      dmEmbed.addField("Status", "You have been temporarily banned from the server due to accumulating warning points.",
+      dmEmbed.addField("Status", "You have been temporarily banned from the server due to accumulating warns.",
           false);
     } else {
       dmEmbed.addField("Thresholds",
-          "Temporary ban: " + TEMP_BAN_THRESHOLD + " points\nPermanent ban: " + BAN_THRESHOLD + " points", false);
+          "Temporary ban: " + TEMP_BAN_THRESHOLD + " warns\nPermanent ban: " + BAN_THRESHOLD + " warns", false);
     }
 
     targetUser.openPrivateChannel().queue(channel -> channel.sendMessageEmbeds(dmEmbed.build()).queue(
@@ -432,7 +432,7 @@ public class DCmdWarn implements DiscordCommand {
         .setDescription(moderator.getAsMention() + " warned " + targetUser.getAsMention())
         .addField("Reason", reason, false)
         .addField("Value", Integer.toString(value), true)
-        .addField("Total Active Points", Integer.toString(totalValue), true)
+        .addField("Total Active Warns", Integer.toString(totalValue), true)
         .setFooter("User ID: " + targetUser.getId())
         .setTimestamp(Instant.now())
         .setColor(Color.ORANGE);
