@@ -291,7 +291,7 @@ public class DCmdShop extends ListenerAdapter implements DiscordCommand {
       }
 
       // Check if item is in stock
-      if (item.getQuantity() != null && item.getQuantity() <= 0) {
+      if (item.getQuantity() != null && item.getQuantity() == 0) {
         event.reply("This item is out of stock.").setEphemeral(true).queue();
         return;
       }

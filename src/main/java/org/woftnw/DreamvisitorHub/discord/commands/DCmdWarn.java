@@ -1,205 +1,427 @@
-// package org.woftnw.DreamvisitorHub.discord.commands;
+package org.woftnw.DreamvisitorHub.discord.commands;
 
-// import io.github.stonley890.dreamvisitor.data.AltFamily;
-// import io.github.stonley890.dreamvisitor.data.Infraction;
-// import net.dv8tion.jda.api.Permission;
-// import net.dv8tion.jda.api.entities.Member;
-// import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-// import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-// import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-// import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-// import net.dv8tion.jda.api.hooks.ListenerAdapter;
-// import net.dv8tion.jda.api.interactions.InteractionHook;
-// import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
-// import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-// import net.dv8tion.jda.api.interactions.commands.OptionType;
-// import net.dv8tion.jda.api.interactions.commands.build.Commands;
-// import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
-// import net.dv8tion.jda.api.interactions.components.ActionRow;
-// import net.dv8tion.jda.api.interactions.components.buttons.Button;
-// import org.bukkit.Bukkit;
-// import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import org.jetbrains.annotations.NotNull;
+import org.woftnw.DreamvisitorHub.App;
+import org.woftnw.DreamvisitorHub.data.repository.InfractionRepository;
+import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
+import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.DreamvisitorHub.data.type.Infraction;
+import org.woftnw.DreamvisitorHub.discord.Bot;
 
-// import java.io.InvalidObjectException;
-// import java.time.LocalDateTime;
-// import java.util.ArrayList;
-// import java.util.List;
-// import java.util.Objects;
+import java.awt.*;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-// public class DCmdWarn extends ListenerAdapter implements DiscordCommand {
+public class DCmdWarn implements DiscordCommand {
+  private static final Logger LOGGER = Logger.getLogger(DCmdWarn.class.getName());
+  private final UserRepository userRepository = App.getUserRepository();
+  private final InfractionRepository infractionRepository = App.getInfractionRepository();
 
-//     public static InteractionHook lastInteraction = null;
-//     public static Infraction lastInfraction = null;
-//     public static boolean silent = false;
-//     public static long memberId = 0;
+  // Define role IDs for ban/temp ban roles
+  private long BANNED_ROLE_ID = 1121851264741933138L;
+  private long TEMP_BAN_ROLE_ID = 1121851513564835900L;
 
-//     @Override
-//     public @NotNull SlashCommandData getCommandData() {
-//         return Commands.slash("warn", "Warn a member.")
-//                 .addOption(OptionType.USER, "member", "The member to warn", true)
-//                 .addOption(OptionType.INTEGER, "value", "How many infractions to count this as.", true)
-//                 .addOption(OptionType.BOOLEAN, "silent", "Whether to notify the member. If true, Dreamvisitor will NOT notify.", true)
-//                 .addOption(OptionType.STRING, "reason", "The reason for this warn.", false)
-//                 .setDefaultPermissions(DefaultMemberPermissions.DISABLED);
-//     }
+  // Warning threshold for automatic ban
+  private static final int BAN_THRESHOLD = 10;
+  private static final int TEMP_BAN_THRESHOLD = 5;
 
-//     @Override
-//     public void onCommand(@NotNull SlashCommandInteractionEvent event) {
-//         event.deferReply().queue(DCmdWarn::updateLastInteraction);
+  @NotNull
+  @Override
+  public SlashCommandData getCommandData() {
+    return Commands.slash("warn", "Warn a user for breaking rules.")
+        .addOption(OptionType.USER, "user", "The user to warn.", true)
+        .addOption(OptionType.INTEGER, "value", "The severity of the warning.", true)
+        .addOption(OptionType.STRING, "reason", "The reason for the warning.", true)
+        .addOption(OptionType.BOOLEAN, "send-warning", "Whether to send a DM to the user. Defaults to true.", false)
+        .setDefaultPermissions(DefaultMemberPermissions.ENABLED);
+  }
 
-//         Member member = Objects.requireNonNull(event.getOption("member")).getAsMember();
-//         if (member == null) {
-//             event.getHook().editOriginal("That member does not exist.").queue();
-//             return;
-//         }
+  @Override
+  public void onCommand(@NotNull SlashCommandInteractionEvent event) {
+    // Try to parse role IDs from config with error checking
+    try {
+      BANNED_ROLE_ID = (long) App.getConfig().getOrDefault("bannedRole", BANNED_ROLE_ID);
+      TEMP_BAN_ROLE_ID = (long) App.getConfig().getOrDefault("tempBanRole", TEMP_BAN_ROLE_ID);
+      LOGGER.info("Using ban role ID: " + BANNED_ROLE_ID + ", temp ban role ID: " + TEMP_BAN_ROLE_ID);
+    } catch (Exception e) {
+      LOGGER.warning("Failed to get role IDs from config: " + e.getMessage());
+    }
 
-//         long parent = AltFamily.getParent(member.getIdLong());
-//         if (parent != member.getIdLong()) {
-//             Objects.requireNonNull(event.getGuild()).retrieveMemberById(parent).queue(parentMember -> event.getHook().editOriginal("That user is the child of " + parentMember.getAsMention() + ". Warn them instead.").queue());
-//             return;
-//         }
+    // Verify bot has permission to assign roles
+    if (!event.getGuild().getSelfMember().hasPermission(Permission.MANAGE_ROLES)) {
+      event.reply("I don't have permission to assign roles. Please grant the bot the 'Manage Roles' permission.")
+          .setEphemeral(true).queue();
+      return;
+    }
 
-//         int value = Objects.requireNonNull(event.getOption("value")).getAsInt();
-//         if (value > 6) {
-//             event.getHook().editOriginal("Slow down there. You cannot give an infraction a value higher than **3**.").queue();
-//             return;
-//         }
+    // Get command options
+    User targetUser = event.getOption("user", OptionMapping::getAsUser);
+    Integer value = event.getOption("value", OptionMapping::getAsInt);
+    String reason = event.getOption("reason", OptionMapping::getAsString);
+    boolean sendWarning = event.getOption("send-warning", true, OptionMapping::getAsBoolean);
 
-//         List<Infraction> infractions;
+    if (targetUser == null || value == null || reason == null) {
+      event.reply("Missing required options.").setEphemeral(true).queue();
+      return;
+    }
 
-//         infractions = Infraction.getInfractions(member.getIdLong());
+    // Validate input
+    if (value <= 0) {
+      event.reply("The warning value must be positive.").setEphemeral(true).queue();
+      return;
+    }
 
-//         int infractionCount = Infraction.getInfractionCount(infractions, false);
-//         if (infractionCount + value > Infraction.BAN_POINT) {
-//             event.getHook().editOriginal("You cannot add an infraction whose value exceeds the ban point of " + Infraction.BAN_POINT +
-//                     ". The highest value you can assign is " + (Infraction.BAN_POINT - infractionCount)).queue();
-//             return;
-//         }
+    // Find user in database
+    Optional<DVUser> targetUserOpt = userRepository.findBySnowflakeId(targetUser.getIdLong());
 
-//         String reason = event.getOption("reason", OptionMapping::getAsString);
-//         if (reason == null) reason = "Unspecified.";
-//         reason = reason.strip();
+    if (!targetUserOpt.isPresent()) {
+      event.reply("That user does not have a profile yet.").setEphemeral(true).queue();
+      return;
+    }
 
-//         boolean silent = Boolean.TRUE.equals(event.getOption("silent", OptionMapping::getAsBoolean));
+    DVUser dvUser = targetUserOpt.get();
 
-//         boolean hasTempban;
+    // Create new infraction
+    Infraction infraction = new Infraction();
+    infraction.setReason(reason);
+    infraction.setValue(value);
+    infraction.setSend_warning(sendWarning);
+    infraction.setExpired(false);
+    infraction.setUser(dvUser.getId());
 
-//         hasTempban = Infraction.hasTempban(member.getIdLong());
+    try {
+      // Save infraction to database
+      infractionRepository.save(infraction);
+      LOGGER.info("Saved infraction for user " + targetUser.getId() + " with value " + value);
 
-//         if (infractionCount < Infraction.BAN_POINT) {
-//             if (infractionCount + value == Infraction.BAN_POINT) {
+      // Get total active infractions value
+      List<Infraction> activeInfractions = infractionRepository.findActiveByUser(dvUser.getId());
+      int totalInfractionValue = 0;
 
-//                 ActionRow actionRow;
-//                 if (!hasTempban) {
-//                     if (silent) actionRow = ActionRow.of(
-//                             Button.danger(Infraction.actionBan, "Ban them for two weeks."),
-//                             Button.secondary(Infraction.actionNoBan, "Don't auto-ban them.")
-//                     );
-//                     else actionRow = ActionRow.of(
-//                             Button.danger(Infraction.actionBan, "Ban them for two weeks."),
-//                             Button.primary(Infraction.actionUserBan, "No, but mention a temp-ban in the message."),
-//                             Button.secondary(Infraction.actionNoBan, "No, don't mention a temp-ban.")
-//                     );
-//                 } else {
-//                     if (silent) actionRow = ActionRow.of(
-//                             Button.danger(Infraction.actionBan, "Permanently ban from Minecraft."),
-//                             Button.danger(Infraction.actionAllBan, "Permanently ban from all."),
-//                             Button.secondary(Infraction.actionNoBan, "No, don't ban them.")
-//                     );
-//                     else actionRow = ActionRow.of(
-//                             Button.danger(Infraction.actionBan, "Permanently ban from Minecraft."),
-//                             Button.danger(Infraction.actionAllBan, "Ban from all immediately (skip message)."),
-//                             Button.primary(Infraction.actionUserBan, "Mention a ban, but don't auto-ban."),
-//                             Button.secondary(Infraction.actionNoBan, "Don't mention a ban and don't auto-ban.")
-//                     );
-//                 }
+      for (Infraction activeInfraction : activeInfractions) {
+        if (activeInfraction.getValue() != null) {
+          totalInfractionValue += activeInfraction.getValue();
+        }
+      }
+      LOGGER.info("User " + targetUser.getId() + " has " + totalInfractionValue + " total active infraction points");
 
-//                 memberId = member.getIdLong();
+      // Check if thresholds are exceeded and update ban status
+      boolean wasBanned = dvUser.getIs_banned() != null && dvUser.getIs_banned();
+      boolean wasTempBanned = dvUser.getIs_suspended() != null && dvUser.getIs_suspended();
 
-//                 lastInfraction = new Infraction((byte) value, reason, LocalDateTime.now());
-//                 DCmdWarn.silent = silent;
-//                 try {
-//                     event.getHook().editOriginal("This will be the user's third warn. Do you want me to also give them a ban from the Minecraft server?")
-//                             .setActionRow(actionRow.getComponents()).queue();
-//                 } catch (Exception e) {
-//                     Bukkit.getLogger().warning("There was a problem responding to a /warn command: " + e.getMessage());
-//                 }
-//             } else {
+      boolean shouldBeBanned = totalInfractionValue >= BAN_THRESHOLD;
+      boolean shouldBeTempBanned = totalInfractionValue >= TEMP_BAN_THRESHOLD;
 
-//                 try {
-//                     Infraction.execute(new Infraction((byte) value, reason, LocalDateTime.now()), member, silent, Infraction.actionNoBan);
-//                 } catch (Exception e) {
-//                     try {
-//                         event.getHook().editOriginal("There was a problem executing this command: " + e.getMessage()).queue();
-//                     } catch (Exception ex) {
-//                         Bukkit.getLogger().warning("There was a problem responding to a /warn command: " + ex.getMessage());
-//                     }
-//                     return;
-//                 }
+      StringBuilder specialActionMsg = new StringBuilder();
 
-//                 try {
-//                     event.getHook().editOriginal("Infraction recorded.").queue(null, throwable -> Bukkit.getLogger().warning("There was a problem responding to a /warn command: " + throwable.getMessage()));
-//                 } catch (IllegalArgumentException e) {
-//                     Bukkit.getLogger().warning("There was a problem responding to a /warn command: " + e.getMessage());
-//                 }
+      // Get member with a more robust method that attempts REST retrieval
+      Member targetMember = null;
+      try {
+        // First try to get from cache
+        targetMember = event.getGuild().getMember(targetUser);
+        LOGGER.info("Attempt to get member from cache: " + (targetMember != null ? "SUCCESS" : "FAILED"));
 
-//             }
-//         }
-//     }
+        // If not in cache, try REST API
+        if (targetMember == null) {
+          LOGGER.info("Member not found in cache for " + targetUser.getName() + ", trying REST API...");
+          try {
+            targetMember = event.getGuild().retrieveMemberById(targetUser.getId()).complete();
+            LOGGER.info("REST API member retrieval result: " + (targetMember != null ? "SUCCESS" : "FAILED"));
+          } catch (Exception restEx) {
+            LOGGER.severe("REST API retrieval exception: " + restEx.getMessage());
+            restEx.printStackTrace();
+          }
+        }
+      } catch (Exception e) {
+        LOGGER.severe("Failed to retrieve member for user " + targetUser.getName() + ": " + e.getMessage());
+        e.printStackTrace();
+      }
 
-//     private static void updateLastInteraction(InteractionHook newInteraction) {
+      // Log detailed information about the member if found
+      if (targetMember != null) {
+        LOGGER.info("Found member: " + targetMember.getEffectiveName() +
+            ", ID: " + targetMember.getId() +
+            ", Guild: " + targetMember.getGuild().getName() +
+            ", Roles count: " + targetMember.getRoles().size());
+      } else {
+        LOGGER.warning("Member is NULL after both cache and REST attempts for user " + targetUser.getName());
+        specialActionMsg.append("⚠️ Could not find this user in the server. They may have left. ");
+      }
 
-//         List<ActionRow> actionRows = new ArrayList<>();
+      // Update user's ban status if needed
+      if (shouldBeBanned && !wasBanned) {
+        dvUser.setIs_banned(true);
+        dvUser.setIs_suspended(false);
+        userRepository.save(dvUser);
 
-//         if (lastInteraction != null) {
-//             lastInteraction.retrieveOriginal().queue(original -> {
-//                 for (ActionRow actionRow : original.getActionRows()) {
-//                     actionRows.add(actionRow.asDisabled());
-//                 }
-//             }, null);
-//             if (!actionRows.isEmpty()) lastInteraction.editOriginalComponents(actionRows).queue(completion -> lastInteraction = newInteraction);
-//         }
+        if (targetMember != null) {
+          try {
+            // Get role objects with proper error checking
+            LOGGER.info("User " + targetUser.getName() + " should be FULLY banned - attempting to add role");
+            Role bannedRole = null;
+            Role tempBanRole = null;
 
-//         lastInteraction = newInteraction;
+            if (BANNED_ROLE_ID != 0) {
+              bannedRole = event.getGuild().getRoleById(BANNED_ROLE_ID);
+              if (bannedRole == null) {
+                LOGGER.severe("BANNED ROLE IS NULL for ID: " + BANNED_ROLE_ID);
+                specialActionMsg.append("\n⚠️ Could not find banned role with ID ").append(BANNED_ROLE_ID);
+              } else {
+                LOGGER.info("Found banned role: " + bannedRole.getName() + " (ID: " + bannedRole.getId() + ")");
+                if (!event.getGuild().getSelfMember().canInteract(bannedRole)) {
+                  LOGGER.severe("BOT CANNOT INTERACT WITH BANNED ROLE - role hierarchy issue");
+                  specialActionMsg.append("\n⚠️ Cannot assign banned role due to role hierarchy");
+                }
+              }
+            } else {
+              LOGGER.severe("BANNED ROLE ID IS ZERO");
+              specialActionMsg.append("\n⚠️ Banned role ID is not configured properly");
+            }
 
-//     }
+            if (TEMP_BAN_ROLE_ID != 0) {
+              tempBanRole = event.getGuild().getRoleById(TEMP_BAN_ROLE_ID);
+              if (tempBanRole == null) {
+                LOGGER.warning("Temp ban role with ID " + TEMP_BAN_ROLE_ID + " not found in guild");
+              } else {
+                LOGGER.info("Found temp ban role: " + tempBanRole.getName() + " (ID: " + tempBanRole.getId() + ")");
+              }
+            }
 
-//     @Override
-//     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+            // Check guild, member and bot permissions
+            LOGGER.info("Guild has " + event.getGuild().getRoles().size() + " roles");
+            LOGGER.info("Bot has manage roles permission: "
+                + event.getGuild().getSelfMember().hasPermission(Permission.MANAGE_ROLES));
+            LOGGER.info("Target member has " + targetMember.getRoles().size() + " roles");
 
-//         String buttonId = event.getButton().getId();
-//         if (buttonId == null) return;
+            // Check if the member already has the role
+            boolean hasRole = bannedRole != null && targetMember.getRoles().contains(bannedRole);
+            LOGGER.info("Member already has banned role: " + hasRole);
 
-//         switch (buttonId) {
-//             case Infraction.actionBan, Infraction.actionNoBan, Infraction.actionAllBan, Infraction.actionUserBan -> {
+            // Add banned role if not already present - use complete() for synchronous role
+            // management
+            if (bannedRole != null && !targetMember.getRoles().contains(bannedRole) &&
+                event.getGuild().getSelfMember().canInteract(bannedRole)) {
 
-//                 try {
-//                     event.getMessage().editMessageComponents(event.getMessage().getActionRows().get(0).asDisabled()).queue();
-//                     Infraction.execute(DCmdWarn.lastInfraction, Objects.requireNonNull(Objects.requireNonNull(event.getGuild()).retrieveMemberById(DCmdWarn.memberId).complete()), DCmdWarn.silent, buttonId);
-//                     event.reply("Infraction notice created.").queue();
-//                 } catch (InsufficientPermissionException e) {
-//                     event.getMessage().editMessageComponents(event.getMessage().getActionRows().get(0).asDisabled()).queue();
-//                     event.reply("Dreamvisitor does not have sufficient permissions! " + e.getMessage()).queue();
-//                 } catch (InvalidObjectException e) {
-//                     event.getMessage().editMessageComponents(event.getMessage().getActionRows().get(0).asDisabled()).queue();
-//                     event.reply("Something is configured incorrectly! " + e.getMessage()).queue();
-//                 }
-//             }
-//             case "warn-understand" -> {
-//                 TextChannel channel = (TextChannel) event.getMessageChannel();
-//                 event.reply("Marked as dismissed. View permission removed.").queue();
-//                 try {
-//                     channel.upsertPermissionOverride(Objects.requireNonNull(event.getMember())).setDenied(Permission.VIEW_CHANNEL).queue();
-//                 } catch (InsufficientPermissionException e) {
-//                     event.reply("Dreamvisitor has insufficient permissions: " + e.getMessage()).queue();
-//                     return;
-//                 }
-//                 event.getMessage().editMessageComponents(event.getMessage().getActionRows().get(0).asDisabled()).queue();
-//             }
-//             case "warn-explain" -> {
-//                 event.reply("A staff member will explain the reason for your warn. Please be patient. This could take some time.").queue();
-//                 event.getMessage().editMessageComponents(event.getMessage().getActionRows().get(0).asDisabled()).queue();
-//             }
-//         }
-//     }
-// }
+              LOGGER.info("Attempting to add banned role " + bannedRole.getName() + " to " + targetUser.getName());
+              try {
+                // Try synchronous role assignment for easier debugging
+                event.getGuild().addRoleToMember(targetMember, bannedRole).complete();
+                LOGGER.info("Successfully added banned role to " + targetUser.getName());
+              } catch (Exception roleEx) {
+                LOGGER.severe("ROLE ADDITION FAILED: " + roleEx.getMessage());
+                specialActionMsg.append("\n⚠️ Failed to add banned role: ").append(roleEx.getMessage());
+              }
+            }
+
+            // Remove temp ban role if present
+            if (tempBanRole != null && targetMember.getRoles().contains(tempBanRole) &&
+                event.getGuild().getSelfMember().canInteract(tempBanRole)) {
+              try {
+                event.getGuild().removeRoleFromMember(targetMember, tempBanRole).complete();
+                LOGGER.info("Successfully removed temp ban role from " + targetUser.getName());
+              } catch (Exception roleEx) {
+                LOGGER.severe("TEMP ROLE REMOVAL FAILED: " + roleEx.getMessage());
+              }
+            }
+
+            specialActionMsg.append("User now has ").append(totalInfractionValue)
+                .append(" active infraction points and has been **banned**.");
+          } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error managing roles for ban", e);
+            specialActionMsg.append("User now has ").append(totalInfractionValue)
+                .append(" active infraction points and should be **banned**, but role assignment failed.");
+          }
+        } else {
+          LOGGER.info("User " + targetUser.getName() + " is not in the guild, can't assign banned role");
+          specialActionMsg.append("User now has ").append(totalInfractionValue)
+              .append(" active infraction points and should be **banned**, but they are not in the server.");
+        }
+      } else if (shouldBeTempBanned && !wasTempBanned && !shouldBeBanned) {
+        dvUser.setIs_banned(false);
+        dvUser.setIs_suspended(true);
+        userRepository.save(dvUser);
+
+        if (targetMember != null) {
+          try {
+            // Get role objects with proper error checking
+            LOGGER.info("User " + targetUser.getName() + " should be TEMP banned - attempting to add role");
+            Role bannedRole = null;
+            Role tempBanRole = null;
+
+            if (BANNED_ROLE_ID != 0) {
+              bannedRole = event.getGuild().getRoleById(BANNED_ROLE_ID);
+              if (bannedRole == null) {
+                LOGGER.warning("Banned role with ID " + BANNED_ROLE_ID + " not found in guild");
+              }
+            }
+
+            if (TEMP_BAN_ROLE_ID != 0) {
+              tempBanRole = event.getGuild().getRoleById(TEMP_BAN_ROLE_ID);
+              if (tempBanRole == null) {
+                LOGGER.severe("TEMP BAN ROLE IS NULL for ID: " + TEMP_BAN_ROLE_ID);
+                specialActionMsg.append("\n⚠️ Could not find temp ban role with ID ").append(TEMP_BAN_ROLE_ID);
+              } else {
+                LOGGER.info("Found temp ban role: " + tempBanRole.getName() + " (ID: " + tempBanRole.getId() + ")");
+                if (!event.getGuild().getSelfMember().canInteract(tempBanRole)) {
+                  LOGGER.severe("BOT CANNOT INTERACT WITH TEMP BAN ROLE - role hierarchy issue");
+                  specialActionMsg.append("\n⚠️ Cannot assign temp ban role due to role hierarchy");
+                }
+              }
+            } else {
+              LOGGER.severe("TEMP BAN ROLE ID IS ZERO");
+              specialActionMsg.append("\n⚠️ Temp ban role ID is not configured properly");
+            }
+
+            // Add temp ban role if not already present - use complete() for synchronous
+            // role management
+            if (tempBanRole != null && !targetMember.getRoles().contains(tempBanRole) &&
+                event.getGuild().getSelfMember().canInteract(tempBanRole)) {
+
+              LOGGER.info("Attempting to add temp ban role " + tempBanRole.getName() + " to " + targetUser.getName());
+              try {
+                // Try synchronous role assignment for easier debugging
+                event.getGuild().addRoleToMember(targetMember, tempBanRole).complete();
+                LOGGER.info("Successfully added temp ban role to " + targetUser.getName());
+              } catch (Exception roleEx) {
+                LOGGER.severe("TEMP ROLE ADDITION FAILED: " + roleEx.getMessage());
+                specialActionMsg.append("\n⚠️ Failed to add temp ban role: ").append(roleEx.getMessage());
+              }
+            }
+
+            specialActionMsg.append("User now has ").append(totalInfractionValue)
+                .append(" active infraction points and has been **temporarily banned**.");
+          } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error managing roles for temp ban", e);
+            specialActionMsg.append("User now has ").append(totalInfractionValue)
+                .append(" active infraction points and should be **temporarily banned**, but role assignment failed.");
+          }
+        } else {
+          LOGGER.info("User " + targetUser.getName() + " is not in the guild, can't assign temp ban role");
+          specialActionMsg.append("User now has ").append(totalInfractionValue)
+              .append(
+                  " active infraction points and should be **temporarily banned**, but they are not in the server.");
+        }
+      } else {
+        specialActionMsg.append("User now has ").append(totalInfractionValue).append(" active infraction points.");
+      }
+
+      // Inform moderator
+      EmbedBuilder embed = new EmbedBuilder()
+          .setTitle("Warning Issued")
+          .setDescription("User " + targetUser.getAsMention() + " has been warned.")
+          .addField("Reason", reason, false)
+          .addField("Value", value.toString(), true)
+          .addField("Sent DM", sendWarning ? "Yes" : "No", true)
+          .addField("Status", specialActionMsg.toString(), false)
+          .setFooter("Warning issued by " + event.getUser().getName(), event.getUser().getEffectiveAvatarUrl())
+          .setTimestamp(Instant.now())
+          .setColor(Color.ORANGE);
+
+      event.replyEmbeds(embed.build()).queue();
+
+      // Send warning DM if enabled
+      if (sendWarning) {
+        sendWarningDM(targetUser, reason, value, totalInfractionValue, shouldBeTempBanned, shouldBeBanned);
+      }
+
+      // Log warning to server logs
+      logWarning(event.getUser(), targetUser, reason, value, totalInfractionValue);
+
+    } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, "Error issuing warning", e);
+      event.reply("An error occurred while processing the warning. Please try again later.").setEphemeral(true).queue();
+    }
+  }
+
+  /**
+   * Sends a warning DM to the user
+   */
+  private void sendWarningDM(User targetUser, String reason, int value, int totalValue, boolean isTempBanned,
+      boolean isBanned) {
+    EmbedBuilder dmEmbed = new EmbedBuilder()
+        .setTitle("Warning Received")
+        .setDescription("You have received a warning on the DreamvisitorHub server.")
+        .addField("Reason", reason, false)
+        .addField("Value", Integer.toString(value), true)
+        .addField("Total Active Points", Integer.toString(totalValue), true)
+        .setColor(Color.RED)
+        .setTimestamp(Instant.now());
+
+    if (isBanned) {
+      dmEmbed.addField("Status", "You have been banned from the server due to accumulating too many warning points.",
+          false);
+    } else if (isTempBanned) {
+      dmEmbed.addField("Status", "You have been temporarily banned from the server due to accumulating warning points.",
+          false);
+    } else {
+      dmEmbed.addField("Thresholds",
+          "Temporary ban: " + TEMP_BAN_THRESHOLD + " points\nPermanent ban: " + BAN_THRESHOLD + " points", false);
+    }
+
+    targetUser.openPrivateChannel().queue(channel -> channel.sendMessageEmbeds(dmEmbed.build()).queue(
+        success -> {
+        },
+        error -> LOGGER.log(Level.WARNING, "Could not send warning DM to user " + targetUser.getId(), error)));
+  }
+
+  /**
+   * Logs the warning to the server log channel
+   */
+  private void logWarning(User moderator, User targetUser, String reason, int value, int totalValue) {
+    EmbedBuilder logEmbed = new EmbedBuilder()
+        .setTitle("User Warned")
+        .setDescription(moderator.getAsMention() + " warned " + targetUser.getAsMention())
+        .addField("Reason", reason, false)
+        .addField("Value", Integer.toString(value), true)
+        .addField("Total Active Points", Integer.toString(totalValue), true)
+        .setFooter("User ID: " + targetUser.getId())
+        .setTimestamp(Instant.now())
+        .setColor(Color.ORANGE);
+
+    // Send to log channel if exists
+    if (Bot.getGameLogChannel() != null) {
+      Bot.getGameLogChannel().sendMessageEmbeds(logEmbed.build()).queue();
+    }
+  }
+
+  /**
+   * Notifies server admin of role-related issues
+   */
+  private void notifyAdminOfRoleIssue(Guild guild, String action, String errorMessage) {
+    try {
+      User owner = guild.getOwner() != null ? guild.getOwner().getUser() : guild.retrieveOwner().complete().getUser();
+
+      if (owner != null) {
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("Role Permission Issue")
+            .setDescription("The bot couldn't " + action + " in " + guild.getName() + ".")
+            .addField("Error", errorMessage, false)
+            .addField("Fix",
+                "Please ensure the bot's role is above the roles it needs to manage and that it has the 'Manage Roles' permission.",
+                false)
+            .setColor(Color.RED);
+
+        owner.openPrivateChannel().queue(channel -> channel.sendMessageEmbeds(embed.build()).queue(
+            success -> LOGGER.info("Sent role issue notification to server owner"),
+            error -> LOGGER.warning("Could not DM server owner about role issue")));
+      }
+    } catch (Exception e) {
+      LOGGER.warning("Failed to notify admin of role issue: " + e.getMessage());
+    }
+  }
+}

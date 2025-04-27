@@ -4,9 +4,11 @@ import org.shanerx.mojang.Mojang;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseItemRepository;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserInventoryRepository;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
+import org.woftnw.DreamvisitorHub.data.repository.PocketBaseInfractionRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.ItemRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserInventoryRepository;
+import org.woftnw.DreamvisitorHub.data.repository.InfractionRepository;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
 import org.woftnw.DreamvisitorHub.util.ConfigLoader;
@@ -15,7 +17,6 @@ import org.woftnw.DreamvisitorHub.util.PBConfigLoader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 public class App {
@@ -27,6 +28,7 @@ public class App {
   private static UserRepository userRepository;
   private static ItemRepository itemRepository;
   private static UserInventoryRepository userInventoryRepository;
+  private static InfractionRepository infractionRepository;
 
   public static void main(String[] args) throws IOException {
     logger.info("Starting DreamvisitorHub...");
@@ -41,6 +43,7 @@ public class App {
     userRepository = new PocketBaseUserRepository(pb);
     itemRepository = new PocketBaseItemRepository(pb);
     userInventoryRepository = new PocketBaseUserInventoryRepository(pb, userRepository, itemRepository);
+    infractionRepository = new PocketBaseInfractionRepository(pb, userRepository);
 
     mojang = new Mojang().connect();
     try {
@@ -97,5 +100,9 @@ public class App {
 
   public static UserInventoryRepository getUserInventoryRepository() {
     return userInventoryRepository;
+  }
+
+  public static InfractionRepository getInfractionRepository() {
+    return infractionRepository;
   }
 }
