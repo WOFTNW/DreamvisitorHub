@@ -13,17 +13,20 @@ import org.woftnw.DreamvisitorHub.App;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.mc_renderer.TextureLoader;
 // import org.woftnw.mc_renderer.MCRenderer;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -36,6 +39,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class DCmdSeen implements DiscordCommand {
+  private final int SCALED_HEAD_SIZE = 64; // Size of the scaled head image
   private final UserRepository userRepository = new PocketBaseUserRepository(App.getPb());
   private static final Logger logger = Logger.getLogger(DCmdSeen.class.toString());
 
@@ -101,39 +105,38 @@ public class DCmdSeen implements DiscordCommand {
     embed.setColor(Color.BLUE);
     embed.setTimestamp(Instant.now());
 
-    // // Try to fetch and render player skin
-    // byte[] skinImageBytes = null;
-    // if (dvUser.getMc_uuid() != null) {
-    // try {
-    // String skinUrl = fetchPlayerSkinUrl(dvUser.getMc_uuid().toString());
-    // if (skinUrl != null && !skinUrl.isEmpty()) {
-    // logger.info("Found skin URL: " + skinUrl);
-    // BufferedImage skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
+    // Try to fetch and render player skin
+    byte[] skinImageBytes = null;
+    if (dvUser.getMc_uuid() != null) {
+      try {
+        String skinUrl = fetchPlayerSkinUrl(dvUser.getMc_uuid().toString());
+        if (skinUrl != null && !skinUrl.isEmpty()) {
+          logger.info("Found skin URL: " + skinUrl);
 
-    // // Convert BufferedImage to byte array
-    // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    // ImageIO.write(skin, "png", outputStream);
-    // skinImageBytes = outputStream.toByteArray();
-    // }
-    // } catch (Exception e) {
-    // logger.log(Level.WARNING, "Failed to fetch player skin", e);
-    // }
-    // }
+          // Load the texture using TextureLoader
+          ByteBuffer skinBuffer = TextureLoader.loadTextureFromUrl(skinUrl);
 
-    // // Send response with or without skin
-    // if (skinImageBytes != null) {
-    // // Set the thumbnail to show as part of the embed
-    // embed.setThumbnail("attachment://skin.png");
+          // Use the new utility method to extract and scale the head
+          skinImageBytes = TextureLoader.extractAndScaleMinecraftHeadBytes(skinBuffer, SCALED_HEAD_SIZE);
 
-    // // Send the embed with the file attached
-    // event.getHook().sendMessageEmbeds(embed.build())
-    // .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes,
-    // "skin.png"))
-    // .queue();
-    // } else {
-    // event.getHook().sendMessageEmbeds(embed.build()).queue();
-    // }
-    event.getHook().sendMessageEmbeds(embed.build()).queue();
+        }
+      } catch (Exception e) {
+        logger.log(Level.WARNING, "Failed to fetch player skin", e);
+      }
+    }
+
+    // Send response with or without skin
+    if (skinImageBytes != null) {
+      // Set the thumbnail to show as part of the embed
+      embed.setThumbnail("attachment://skin.png");
+
+      // Send the embed with the file attached
+      event.getHook().sendMessageEmbeds(embed.build())
+          .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes, "skin.png"))
+          .queue();
+    } else {
+      event.getHook().sendMessageEmbeds(embed.build()).queue();
+    }
   }
 
   /**

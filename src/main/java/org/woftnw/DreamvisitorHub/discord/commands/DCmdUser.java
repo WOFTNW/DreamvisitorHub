@@ -14,6 +14,8 @@ import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
 import org.woftnw.DreamvisitorHub.discord.Bot;
 import org.woftnw.DreamvisitorHub.pb.PocketBase;
+import org.woftnw.mc_renderer.TextureLoader;
+
 // import org.woftnw.mc_renderer.MCRenderer;
 import java.awt.*;
 import java.io.BufferedReader;
@@ -84,24 +86,26 @@ public class DCmdUser implements DiscordCommand {
       // Minecraft Information
       String mcUsername = user.getMcUsername() != null ? user.getMcUsername() : "N/A";
       builder.addField("Minecraft Username", mcUsername, false);
-      // // Try to fetch player skin if we have MC username
-      // if (user.getMc_uuid() != null && !user.getMc_uuid().toString().isEmpty()) {
-      // try {
-      // String skinUrl = fetchPlayerSkinUrl(user.getMc_uuid().toString());
-      // if (skinUrl != null && !skinUrl.isEmpty()) {
-      // logger.info("Found skin URL: " + skinUrl);
-      // BufferedImage skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
+      // Try to fetch player skin if we have MC username
+      if (user.getMc_uuid() != null && !user.getMc_uuid().toString().isEmpty()) {
+        try {
+          String skinUrl = fetchPlayerSkinUrl(user.getMc_uuid().toString());
+          if (skinUrl != null && !skinUrl.isEmpty()) {
+            logger.info("Found skin URL: " + skinUrl);
+            // BufferedImage skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
 
-      // // Convert BufferedImage to byte array
-      // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      // ImageIO.write(skin, "png", outputStream);
-      // skinImageBytes = outputStream.toByteArray();
-      // }
-      // } catch (Exception e) {
-      // logger.log(Level.WARNING, "Failed to fetch player skin", e);
-      // logger.log(Level.WARNING, "Exception details:", e);
-      // }
-      // }
+            // Convert BufferedImage to byte array
+            // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            // ImageIO.write(skin, "png", outputStream);
+            // skinImageBytes = outputStream.toByteArray();
+            skinImageBytes = TextureLoader.extractAndScaleMinecraftHeadBytes(
+                TextureLoader.loadTextureFromUrl(skinUrl), 64);
+          }
+        } catch (Exception e) {
+          logger.log(Level.WARNING, "Failed to fetch player skin", e);
+          logger.log(Level.WARNING, "Exception details:", e);
+        }
+      }
 
       // Economic Info
       builder.addField("Balance",
