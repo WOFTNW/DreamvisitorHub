@@ -13,7 +13,7 @@ import org.woftnw.DreamvisitorHub.App;
 import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
 import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
 import org.woftnw.DreamvisitorHub.data.type.DVUser;
-import org.woftnw.mc_renderer.MCRenderer;
+// import org.woftnw.mc_renderer.MCRenderer;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -101,37 +101,39 @@ public class DCmdSeen implements DiscordCommand {
     embed.setColor(Color.BLUE);
     embed.setTimestamp(Instant.now());
 
-    // Try to fetch and render player skin
-    byte[] skinImageBytes = null;
-    if (dvUser.getMc_uuid() != null) {
-      try {
-        String skinUrl = fetchPlayerSkinUrl(dvUser.getMc_uuid().toString());
-        if (skinUrl != null && !skinUrl.isEmpty()) {
-          logger.info("Found skin URL: " + skinUrl);
-          BufferedImage skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
+    // // Try to fetch and render player skin
+    // byte[] skinImageBytes = null;
+    // if (dvUser.getMc_uuid() != null) {
+    // try {
+    // String skinUrl = fetchPlayerSkinUrl(dvUser.getMc_uuid().toString());
+    // if (skinUrl != null && !skinUrl.isEmpty()) {
+    // logger.info("Found skin URL: " + skinUrl);
+    // BufferedImage skin = MCRenderer.renderModelToBufferFromUrl(skinUrl);
 
-          // Convert BufferedImage to byte array
-          ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-          ImageIO.write(skin, "png", outputStream);
-          skinImageBytes = outputStream.toByteArray();
-        }
-      } catch (Exception e) {
-        logger.log(Level.WARNING, "Failed to fetch player skin", e);
-      }
-    }
+    // // Convert BufferedImage to byte array
+    // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    // ImageIO.write(skin, "png", outputStream);
+    // skinImageBytes = outputStream.toByteArray();
+    // }
+    // } catch (Exception e) {
+    // logger.log(Level.WARNING, "Failed to fetch player skin", e);
+    // }
+    // }
 
-    // Send response with or without skin
-    if (skinImageBytes != null) {
-      // Set the thumbnail to show as part of the embed
-      embed.setThumbnail("attachment://skin.png");
+    // // Send response with or without skin
+    // if (skinImageBytes != null) {
+    // // Set the thumbnail to show as part of the embed
+    // embed.setThumbnail("attachment://skin.png");
 
-      // Send the embed with the file attached
-      event.getHook().sendMessageEmbeds(embed.build())
-          .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes, "skin.png"))
-          .queue();
-    } else {
-      event.getHook().sendMessageEmbeds(embed.build()).queue();
-    }
+    // // Send the embed with the file attached
+    // event.getHook().sendMessageEmbeds(embed.build())
+    // .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(skinImageBytes,
+    // "skin.png"))
+    // .queue();
+    // } else {
+    // event.getHook().sendMessageEmbeds(embed.build()).queue();
+    // }
+    event.getHook().sendMessageEmbeds(embed.build()).queue();
   }
 
   /**
