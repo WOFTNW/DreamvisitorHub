@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 public class App {
   private static final Logger logger = Logger.getLogger("DreamvisitorHub");
   private static final String CONFIG_PATH = "config.yml";
+
   private static PocketBase pb;
   private static Map<String, Object> config;
   private static UserRepository userRepository;

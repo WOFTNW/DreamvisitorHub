@@ -1,5 +1,6 @@
 package org.woftnw.dreamvisitorhub.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -28,6 +29,7 @@ public class ConfigLoader {
    * @param filePath path to the YAML file
    * @return Map containing the configuration, or empty map if loading fails
    */
+  @NotNull
   public static Map<String, Object> loadConfig(String filePath) {
     try {
       File configFile = new File(filePath);
