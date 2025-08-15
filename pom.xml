@@ -16,24 +16,58 @@
 
     <dependencies>
         <dependency>
+            <!--Discord API-->
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
             <version>5.6.1</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.17.0</version>
+            <!--JSON-->
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.13.1</version>
         </dependency>
         <dependency>
+            <!--Used for logging-->
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.5.13</version>
         </dependency>
         <dependency>
+            <!--Used to read YAML files (the config)-->
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>2.4</version>
+        </dependency>
+        <dependency>
+            <!--Used to render skin previews-->
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+            <version>3.3.6</version>
+        </dependency>
+        <dependency>
+            <!--Used to render skin previews-->
+            <groupId>org.lwjgl.osgi</groupId>
+            <artifactId>org.lwjgl.assimp</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+        <dependency>
+            <!--Used to render skin previews-->
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>1.10.8</version>
+        </dependency>
+        <dependency>
+            <!--Used to render skin previews-->
+            <groupId>org.lwjgl.osgi</groupId>
+            <artifactId>org.lwjgl.opengl</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+        <dependency>
+            <!--Used to render skin previews-->
+            <groupId>org.lwjgl.osgi</groupId>
+            <artifactId>org.lwjgl.stb</artifactId>
+            <version>3.3.0</version>
         </dependency>
     </dependencies>
 

@@ -1,11 +1,10 @@
-package org.woftnw.dreamvisitorhub;
+package org.woftnw.dreamvisitorhub.commands;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import org.woftnw.dreamvisitorhub.commands.ExecutableSlashCommand;
 
 import java.util.ArrayList;
 import java.util.List;

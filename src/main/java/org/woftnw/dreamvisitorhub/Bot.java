@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.jetbrains.annotations.NotNull;
+import org.woftnw.dreamvisitorhub.commands.CommandManager;
 import org.woftnw.dreamvisitorhub.commands.ExecutableSlashCommand;
 
 import java.util.ArrayList;
