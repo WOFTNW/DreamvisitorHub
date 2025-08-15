@@ -1,11 +1,13 @@
 package org.woftnw.dreamvisitorhub.commands.framework;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +50,16 @@ public class CommandManager extends ListenerAdapter {
                 return;
             }
         }
+
+        // If we get to this point, there are no commands that match. This can happen if a command is removed from the code, but not from Discord's side.
+        // This is not dangerous, but we should delete the command.
+        EmbedBuilder noMatchEmbed = new EmbedBuilder();
+        noMatchEmbed.setColor(Color.RED).setTitle("No commands match your request.").setDescription("This command was removed, but not deleted. It will be deleted shortly.");
+        event.reply("That command doesn't exist anymore.").addEmbeds(noMatchEmbed.build()).queue();
+
+        // Delete the command
+        String commandId = event.getCommandId();
+        guild.deleteCommandById(commandId).queue();
     }
 
     /**
