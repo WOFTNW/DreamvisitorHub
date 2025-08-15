@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 /**
  * Utility class for loading textures from various sources including URLs
  */
+
 /**
  * The TextureLoader class provides utility methods for loading textures from
  * various sources
@@ -41,7 +42,7 @@ import java.nio.ByteBuffer;
  *
  * <p>
  * Example usage:
- * 
+ *
  * <pre>
  * {@code
  * ByteBuffer texture = TextureLoader.loadTextureFromUrl("http://example.com/texture.png");
@@ -54,108 +55,108 @@ import java.nio.ByteBuffer;
  */
 public class TextureLoader {
 
-  /**
-   * Loads a texture from a URL
-   *
-   * @param url The URL to load the texture from
-   * @return ByteBuffer containing the texture data
-   */
-  public static ByteBuffer loadTextureFromUrl(String url) throws IOException {
-    // Open a connection to the URL
-    URL textureUrl = new URL(url);
-    URLConnection connection = textureUrl.openConnection();
+    /**
+     * Loads a texture from a URL
+     *
+     * @param url The URL to load the texture from
+     * @return ByteBuffer containing the texture data
+     */
+    public static ByteBuffer loadTextureFromUrl(String url) throws IOException {
+        // Open a connection to the URL
+        URL textureUrl = new URL(url);
+        URLConnection connection = textureUrl.openConnection();
 
-    // Set user agent to avoid being blocked by some servers
-    connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+        // Set user agent to avoid being blocked by some servers
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
 
-    // Download the image data
-    try (InputStream inputStream = connection.getInputStream()) {
-      return loadTextureFromStream(inputStream);
-    }
-  }
-
-  /**
-   * Loads a texture from an input stream
-   *
-   * @param inputStream The input stream to load the texture from
-   * @return ByteBuffer containing the texture data
-   */
-  public static ByteBuffer loadTextureFromStream(InputStream inputStream) throws IOException {
-    // Read the image using ImageIO
-    BufferedImage image = ImageIO.read(inputStream);
-    if (image == null) {
-      throw new IOException("Failed to load image data");
+        // Download the image data
+        try (InputStream inputStream = connection.getInputStream()) {
+            return loadTextureFromStream(inputStream);
+        }
     }
 
-    // Convert the image to a ByteBuffer
-    return imageToByteBuffer(image);
-  }
+    /**
+     * Loads a texture from an input stream
+     *
+     * @param inputStream The input stream to load the texture from
+     * @return ByteBuffer containing the texture data
+     */
+    public static ByteBuffer loadTextureFromStream(InputStream inputStream) throws IOException {
+        // Read the image using ImageIO
+        BufferedImage image = ImageIO.read(inputStream);
+        if (image == null) {
+            throw new IOException("Failed to load image data");
+        }
 
-  /**
-   * Converts a BufferedImage to a ByteBuffer for OpenGL
-   *
-   * @param image The BufferedImage to convert
-   * @return ByteBuffer containing the image data
-   */
-  private static ByteBuffer imageToByteBuffer(BufferedImage image) throws IOException {
-    // Get image dimensions
-    int width = image.getWidth();
-    int height = image.getHeight();
+        // Convert the image to a ByteBuffer
+        return imageToByteBuffer(image);
+    }
 
-    // Convert image to PNG format in memory
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ImageIO.write(image, "PNG", baos);
-    byte[] imageData = baos.toByteArray();
+    /**
+     * Converts a BufferedImage to a ByteBuffer for OpenGL
+     *
+     * @param image The BufferedImage to convert
+     * @return ByteBuffer containing the image data
+     */
+    private static ByteBuffer imageToByteBuffer(BufferedImage image) throws IOException {
+        // Get image dimensions
+        int width = image.getWidth();
+        int height = image.getHeight();
 
-    // Create and return ByteBuffer
-    ByteBuffer buffer = BufferUtils.createByteBuffer(imageData.length);
-    buffer.put(imageData);
-    buffer.flip();
+        // Convert image to PNG format in memory
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "PNG", baos);
+        byte[] imageData = baos.toByteArray();
 
-    return buffer;
-  }
+        // Create and return ByteBuffer
+        ByteBuffer buffer = BufferUtils.createByteBuffer(imageData.length);
+        buffer.put(imageData);
+        buffer.flip();
 
-  /**
-   * Extracts and scales the head portion from a Minecraft skin texture
-   *
-   * @param skinTexture ByteBuffer containing the skin texture data
-   * @param size        The size to scale the head to (both width and height)
-   * @return byte array containing the scaled head image data in PNG format
-   */
-  public static byte[] extractAndScaleMinecraftHeadBytes(ByteBuffer skinTexture, int size) throws IOException {
-    // Convert ByteBuffer to BufferedImage
-    byte[] bytes = new byte[skinTexture.remaining()];
-    skinTexture.get(bytes);
+        return buffer;
+    }
 
-    BufferedImage skinImage = ImageIO.read(new ByteArrayInputStream(bytes));
+    /**
+     * Extracts and scales the head portion from a Minecraft skin texture
+     *
+     * @param skinTexture ByteBuffer containing the skin texture data
+     * @param size        The size to scale the head to (both width and height)
+     * @return byte array containing the scaled head image data in PNG format
+     */
+    public static byte[] extractAndScaleMinecraftHeadBytes(ByteBuffer skinTexture, int size) throws IOException {
+        // Convert ByteBuffer to BufferedImage
+        byte[] bytes = new byte[skinTexture.remaining()];
+        skinTexture.get(bytes);
 
-    // Crop the head part (8x8 pixels starting at coordinates 8,8)
-    BufferedImage headImage = skinImage.getSubimage(8, 8, 8, 8);
+        BufferedImage skinImage = ImageIO.read(new ByteArrayInputStream(bytes));
 
-    // Scale the head to requested size
-    BufferedImage scaledHeadImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D g2d = scaledHeadImage.createGraphics();
-    g2d.drawImage(headImage, 0, 0, size, size, null);
-    g2d.dispose();
+        // Crop the head part (8x8 pixels starting at coordinates 8,8)
+        BufferedImage headImage = skinImage.getSubimage(8, 8, 8, 8);
 
-    // Convert to byte array
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    ImageIO.write(scaledHeadImage, "png", outputStream);
-    return outputStream.toByteArray();
-  }
+        // Scale the head to requested size
+        BufferedImage scaledHeadImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledHeadImage.createGraphics();
+        g2d.drawImage(headImage, 0, 0, size, size, null);
+        g2d.dispose();
 
-  /**
-   * Extracts and scales the head portion from a Minecraft skin texture
-   *
-   * @param skinTexture ByteBuffer containing the skin texture data
-   * @param size        The size to scale the head to (both width and height)
-   * @return ByteBuffer containing the scaled head image data
-   */
-  public static ByteBuffer extractAndScaleMinecraftHead(ByteBuffer skinTexture, int size) throws IOException {
-    byte[] imageBytes = extractAndScaleMinecraftHeadBytes(skinTexture, size);
-    ByteBuffer buffer = BufferUtils.createByteBuffer(imageBytes.length);
-    buffer.put(imageBytes);
-    buffer.flip();
-    return buffer;
-  }
+        // Convert to byte array
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(scaledHeadImage, "png", outputStream);
+        return outputStream.toByteArray();
+    }
+
+    /**
+     * Extracts and scales the head portion from a Minecraft skin texture
+     *
+     * @param skinTexture ByteBuffer containing the skin texture data
+     * @param size        The size to scale the head to (both width and height)
+     * @return ByteBuffer containing the scaled head image data
+     */
+    public static ByteBuffer extractAndScaleMinecraftHead(ByteBuffer skinTexture, int size) throws IOException {
+        byte[] imageBytes = extractAndScaleMinecraftHeadBytes(skinTexture, size);
+        ByteBuffer buffer = BufferUtils.createByteBuffer(imageBytes.length);
+        buffer.put(imageBytes);
+        buffer.flip();
+        return buffer;
+    }
 }
