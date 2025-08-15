@@ -1,6 +1,6 @@
 package org.woftnw.dreamvisitorhub.data.repository;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.woftnw.dreamvisitorhub.data.type.Item;
 import org.woftnw.dreamvisitorhub.pb.PocketBase;
@@ -18,20 +18,16 @@ import java.util.stream.Collectors;
 /**
  * PocketBase implementation of the ItemRepository interface
  */
-public class PocketBaseItemRepository implements ItemRepository {
+public record PocketBaseItemRepository(PocketBase pocketBase) implements ItemRepository {
     private static final Logger LOGGER = Logger.getLogger(PocketBaseItemRepository.class.getName());
     private static final String COLLECTION_NAME = "items";
-    private final PocketBase pocketBase;
-    private final Gson gson;
 
     /**
      * Constructor for PocketBaseItemRepository
      *
      * @param pocketBase The PocketBase client to use
      */
-    public PocketBaseItemRepository(PocketBase pocketBase) {
-        this.pocketBase = pocketBase;
-        this.gson = new Gson();
+    public PocketBaseItemRepository {
     }
 
     @Override
@@ -231,7 +227,7 @@ public class PocketBaseItemRepository implements ItemRepository {
             return null;
         }
 
-        com.google.gson.JsonElement element = json.get(key);
+        JsonElement element = json.get(key);
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
             return element.getAsString();
         } else {
@@ -310,7 +306,7 @@ public class PocketBaseItemRepository implements ItemRepository {
             return null;
         }
 
-        com.google.gson.JsonElement element = json.get(key);
+        JsonElement element = json.get(key);
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
             // It's already a string, return it directly
             return element.getAsString();

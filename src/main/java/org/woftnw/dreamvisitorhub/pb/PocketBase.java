@@ -2,17 +2,13 @@ package org.woftnw.dreamvisitorhub.pb;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class PocketBase {
@@ -28,7 +24,7 @@ public class PocketBase {
      * @param baseUrl The base URL of the PocketBase instance
      * @param token   The admin/user auth token
      */
-    public PocketBase(String baseUrl, String token) {
+    public PocketBase(@NotNull String baseUrl, String token) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.token = token;
         this.gson = new Gson();
@@ -44,7 +40,8 @@ public class PocketBase {
      *
      * @return A preconfigured PocketBase instance
      */
-    public static PocketBase fromConfig(Map<String, Object> config) {
+    @NotNull
+    public static PocketBase fromConfig(@NotNull Map<String, Object> config) {
         String baseUrl = (String) config.get("pocketbase-url");
         String token = (String) config.get("pocketbase-token");
         return new PocketBase(baseUrl, token);
@@ -57,8 +54,9 @@ public class PocketBase {
      * @param queryParams Query parameters
      * @return The complete URL
      */
+    @NotNull
     private HttpUrl buildUrl(String endpoint, @Nullable Map<String, String> queryParams) {
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(this.baseUrl + endpoint).newBuilder();
+        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(this.baseUrl + endpoint)).newBuilder();
 
         if (queryParams != null) {
             for (Map.Entry<String, String> entry : queryParams.entrySet()) {
@@ -79,7 +77,8 @@ public class PocketBase {
      * @return Response string
      * @throws IOException If the request fails
      */
-    private String executeRequest(String method, String endpoint, @Nullable RequestBody body,
+    @NotNull
+    private String executeRequest(@NotNull String method, String endpoint, @Nullable RequestBody body,
                                   @Nullable Map<String, String> queryParams) throws IOException {
         HttpUrl url = buildUrl(endpoint, queryParams);
 
@@ -98,7 +97,7 @@ public class PocketBase {
                 requestBuilder.patch(body != null ? body : RequestBody.create(new byte[0], null));
                 break;
             case "DELETE":
-                requestBuilder.delete(body != null ? body : null);
+                requestBuilder.delete(body);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported HTTP method: " + method);
@@ -364,7 +363,7 @@ public class PocketBase {
      * @param files  Map of field names to files
      * @return Multipart request body
      */
-    public RequestBody createMultipartBody(Map<String, Object> fields, Map<String, File> files) {
+    public RequestBody createMultipartBody(@NotNull Map<String, Object> fields, Map<String, File> files) {
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM);
 

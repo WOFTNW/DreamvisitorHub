@@ -15,9 +15,8 @@ import java.nio.ByteBuffer;
 
 /**
  * Utility class for loading textures from various sources including URLs
- */
-
-/**
+ *
+ * <p>
  * The TextureLoader class provides utility methods for loading textures from
  * various sources
  * and creating procedural textures. It supports loading textures from URLs,

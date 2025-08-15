@@ -1,6 +1,5 @@
 package org.woftnw.dreamvisitorhub.data.repository;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.woftnw.dreamvisitorhub.data.type.UserInventory;
 import org.woftnw.dreamvisitorhub.data.type.DVUser;
@@ -18,13 +17,10 @@ import java.util.stream.Collectors;
 /**
  * PocketBase implementation of the UserInventoryRepository interface
  */
-public class PocketBaseUserInventoryRepository implements UserInventoryRepository {
+public record PocketBaseUserInventoryRepository(PocketBase pocketBase, UserRepository userRepository,
+                                                ItemRepository itemRepository) implements UserInventoryRepository {
     private static final Logger LOGGER = Logger.getLogger(PocketBaseUserInventoryRepository.class.getName());
     private static final String COLLECTION_NAME = "user_inventory";
-    private final PocketBase pocketBase;
-    private final Gson gson;
-    private final UserRepository userRepository;
-    private final ItemRepository itemRepository;
 
     /**
      * Constructor for PocketBaseUserInventoryRepository
@@ -33,12 +29,7 @@ public class PocketBaseUserInventoryRepository implements UserInventoryRepositor
      * @param userRepository The user repository for fetching related users
      * @param itemRepository The item repository for fetching related items
      */
-    public PocketBaseUserInventoryRepository(PocketBase pocketBase, UserRepository userRepository,
-                                             ItemRepository itemRepository) {
-        this.pocketBase = pocketBase;
-        this.gson = new Gson();
-        this.userRepository = userRepository;
-        this.itemRepository = itemRepository;
+    public PocketBaseUserInventoryRepository {
     }
 
     @Override

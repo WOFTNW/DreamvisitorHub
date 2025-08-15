@@ -86,7 +86,7 @@ public class PocketBaseUserRepository implements UserRepository {
             } catch (IOException e) {
                 // First search failed, try with just string comparison if numeric search fails
                 LOGGER.info("No exact match found, trying alternative search...");
-                filter = "discord_id ~ '" + snowflakeId.toString() + "'";
+                filter = "discord_id ~ '" + snowflakeId + "'";
                 try {
                     JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
                     LOGGER.info("User found with partial match: " + record.toString());
@@ -313,7 +313,6 @@ public class PocketBaseUserRepository implements UserRepository {
 
                 // Try alternative parsing with explicit formatter
                 try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSZ");
                     String dateStr = json.get(key).getAsString();
 
                     // Check if the string is empty or blank

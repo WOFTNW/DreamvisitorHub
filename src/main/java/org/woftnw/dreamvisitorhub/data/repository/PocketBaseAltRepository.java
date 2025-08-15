@@ -1,8 +1,6 @@
 package org.woftnw.dreamvisitorhub.data.repository;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 import org.woftnw.dreamvisitorhub.data.type.Alt;
 import org.woftnw.dreamvisitorhub.pb.PocketBase;
 
@@ -17,12 +15,9 @@ import java.util.stream.Collectors;
 /**
  * PocketBase implementation of the AltRepository interface
  */
-public class PocketBaseAltRepository implements AltRepository {
+public record PocketBaseAltRepository(PocketBase pocketBase, UserRepository userRepository) implements AltRepository {
     private static final Logger LOGGER = Logger.getLogger(PocketBaseAltRepository.class.getName());
     private static final String COLLECTION_NAME = "user_alts";
-    private final PocketBase pocketBase;
-    private final Gson gson;
-    private final UserRepository userRepository;
 
     /**
      * Constructor for PocketBaseAltRepository
@@ -30,10 +25,7 @@ public class PocketBaseAltRepository implements AltRepository {
      * @param pocketBase     PocketBase client
      * @param userRepository User repository for parent relationship
      */
-    public PocketBaseAltRepository(PocketBase pocketBase, UserRepository userRepository) {
-        this.pocketBase = pocketBase;
-        this.gson = new Gson();
-        this.userRepository = userRepository;
+    public PocketBaseAltRepository {
     }
 
     @Override
@@ -238,7 +230,6 @@ public class PocketBaseAltRepository implements AltRepository {
             } catch (Exception e) {
                 LOGGER.warning("Failed to parse date: " + json.get(key).getAsString() + " - " + e.getMessage());
                 try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSZ");
                     String dateStr = json.get(key).getAsString();
                     if (dateStr == null || dateStr.trim().isEmpty()) {
                         return null;

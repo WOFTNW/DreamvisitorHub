@@ -1,6 +1,5 @@
 package org.woftnw.dreamvisitorhub.data.repository;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.woftnw.dreamvisitorhub.data.type.Infraction;
 import org.woftnw.dreamvisitorhub.data.type.DVUser;
@@ -17,12 +16,10 @@ import java.util.stream.Collectors;
 /**
  * PocketBase implementation of the InfractionRepository interface
  */
-public class PocketBaseInfractionRepository implements InfractionRepository {
+public record PocketBaseInfractionRepository(PocketBase pocketBase,
+                                             UserRepository userRepository) implements InfractionRepository {
     private static final Logger LOGGER = Logger.getLogger(PocketBaseInfractionRepository.class.getName());
     private static final String COLLECTION_NAME = "infractions";
-    private final PocketBase pocketBase;
-    private final Gson gson;
-    private final UserRepository userRepository;
 
     /**
      * Constructor for PocketBaseInfractionRepository
@@ -30,10 +27,7 @@ public class PocketBaseInfractionRepository implements InfractionRepository {
      * @param pocketBase     The PocketBase client to use
      * @param userRepository The user repository for fetching related users
      */
-    public PocketBaseInfractionRepository(PocketBase pocketBase, UserRepository userRepository) {
-        this.pocketBase = pocketBase;
-        this.gson = new Gson();
-        this.userRepository = userRepository;
+    public PocketBaseInfractionRepository {
     }
 
     @Override
@@ -261,7 +255,6 @@ public class PocketBaseInfractionRepository implements InfractionRepository {
 
                 // Try alternative parsing with explicit formatter
                 try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSZ");
                     String dateStr = json.get(key).getAsString();
 
                     // Check if the string is empty or blank
@@ -284,7 +277,4 @@ public class PocketBaseInfractionRepository implements InfractionRepository {
         return null;
     }
 
-    private String formatDateTime(OffsetDateTime dateTime) {
-        return dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    }
 }
