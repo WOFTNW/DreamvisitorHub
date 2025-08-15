@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.jetbrains.annotations.NotNull;
 import org.woftnw.dreamvisitorhub.commands.framework.CommandManager;
 import org.woftnw.dreamvisitorhub.commands.framework.ExecutableSlashCommand;
+import org.woftnw.dreamvisitorhub.commands.CommandActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,7 @@ public class Bot {
         }
 
         List<ExecutableSlashCommand> commands = new ArrayList<>();
+        commands.add(new CommandActivity());
 
         commandManager = new CommandManager(guild, commands);
         bot.addEventListener(commandManager);
