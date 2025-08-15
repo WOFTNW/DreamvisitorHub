@@ -1,22 +1,19 @@
-package org.woftnw.DreamvisitorHub;
+package org.woftnw.dreamvisitorhub;
 
-import org.shanerx.mojang.Mojang;
-import org.woftnw.DreamvisitorHub.data.repository.PocketBaseItemRepository;
-import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserInventoryRepository;
-import org.woftnw.DreamvisitorHub.data.repository.PocketBaseUserRepository;
-import org.woftnw.DreamvisitorHub.data.repository.PocketBaseInfractionRepository;
-import org.woftnw.DreamvisitorHub.data.repository.PocketBaseAltRepository;
-import org.woftnw.DreamvisitorHub.data.repository.UserRepository;
-import org.woftnw.DreamvisitorHub.data.repository.ItemRepository;
-import org.woftnw.DreamvisitorHub.data.repository.UserInventoryRepository;
-import org.woftnw.DreamvisitorHub.data.repository.InfractionRepository;
-import org.woftnw.DreamvisitorHub.data.repository.AltRepository;
-import org.woftnw.DreamvisitorHub.discord.Bot;
-import org.woftnw.DreamvisitorHub.pb.PocketBase;
-import org.woftnw.DreamvisitorHub.util.ConfigLoader;
-import org.woftnw.DreamvisitorHub.util.PBConfigLoader;
+import org.woftnw.dreamvisitorhub.data.repository.PocketBaseItemRepository;
+import org.woftnw.dreamvisitorhub.data.repository.PocketBaseUserInventoryRepository;
+import org.woftnw.dreamvisitorhub.data.repository.PocketBaseUserRepository;
+import org.woftnw.dreamvisitorhub.data.repository.PocketBaseInfractionRepository;
+import org.woftnw.dreamvisitorhub.data.repository.PocketBaseAltRepository;
+import org.woftnw.dreamvisitorhub.data.repository.UserRepository;
+import org.woftnw.dreamvisitorhub.data.repository.ItemRepository;
+import org.woftnw.dreamvisitorhub.data.repository.UserInventoryRepository;
+import org.woftnw.dreamvisitorhub.data.repository.InfractionRepository;
+import org.woftnw.dreamvisitorhub.data.repository.AltRepository;
+import org.woftnw.dreamvisitorhub.pb.PocketBase;
+import org.woftnw.dreamvisitorhub.util.ConfigLoader;
+import org.woftnw.dreamvisitorhub.util.PBConfigLoader;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -25,7 +22,6 @@ public class App {
   private static final Logger logger = Logger.getLogger("DreamvisitorHub");
   private static final String CONFIG_PATH = "config.yml";
   private static PocketBase pb;
-  private static Mojang mojang;
   private static Map<String, Object> config;
   private static UserRepository userRepository;
   private static ItemRepository itemRepository;
@@ -33,7 +29,7 @@ public class App {
   private static InfractionRepository infractionRepository;
   private static AltRepository altRepository;
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws InterruptedException {
     logger.info("Starting DreamvisitorHub...");
 
     // First load minimal config to get PocketBase connection info
@@ -48,7 +44,6 @@ public class App {
     userInventoryRepository = new PocketBaseUserInventoryRepository(pb, userRepository, itemRepository);
     infractionRepository = new PocketBaseInfractionRepository(pb, userRepository);
 
-    mojang = new Mojang().connect();
     try {
       // Try to load configuration from PocketBase
       Map<String, Object> pbConfig = PBConfigLoader.loadConfig(pb);
@@ -87,10 +82,6 @@ public class App {
 
   public static Map<String, Object> getConfig() {
     return config;
-  }
-
-  public static Mojang getMojang() {
-    return mojang;
   }
 
   public static UserRepository getUserRepository() {

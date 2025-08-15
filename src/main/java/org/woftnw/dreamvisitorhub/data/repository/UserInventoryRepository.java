@@ -1,8 +1,6 @@
-package org.woftnw.DreamvisitorHub.data.repository;
+package org.woftnw.dreamvisitorhub.data.repository;
 
-import org.woftnw.DreamvisitorHub.data.type.UserInventory;
-import org.woftnw.DreamvisitorHub.data.type.DVUser;
-import org.woftnw.DreamvisitorHub.data.type.Item;
+import org.woftnw.dreamvisitorhub.data.type.UserInventory;
 
 import java.util.List;
 import java.util.Optional;

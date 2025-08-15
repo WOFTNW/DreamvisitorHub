@@ -1,4 +1,4 @@
-package org.woftnw.DreamvisitorHub.pb;
+package org.woftnw.dreamvisitorhub.pb;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -6,17 +6,14 @@ import com.google.gson.reflect.TypeToken;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.woftnw.DreamvisitorHub.App;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 public class PocketBase {
   private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");

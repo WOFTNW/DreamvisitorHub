@@ -1,6 +1,6 @@
-package org.woftnw.DreamvisitorHub.data.repository;
+package org.woftnw.dreamvisitorhub.data.repository;
 
-import org.woftnw.DreamvisitorHub.data.type.Infraction;
+import org.woftnw.dreamvisitorhub.data.type.Infraction;
 import java.util.List;
 import java.util.Optional;
 

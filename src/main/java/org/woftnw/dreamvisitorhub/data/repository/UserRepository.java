@@ -1,11 +1,10 @@
-package org.woftnw.DreamvisitorHub.data.repository;
+package org.woftnw.dreamvisitorhub.data.repository;
 
-import org.woftnw.DreamvisitorHub.data.type.DVUser;
+import org.woftnw.dreamvisitorhub.data.type.DVUser;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 /**
  * Repository interface for User data operations

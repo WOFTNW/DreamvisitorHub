@@ -1,4 +1,4 @@
-package org.woftnw.DreamvisitorHub.data.type;
+package org.woftnw.dreamvisitorhub.data.type;
 
 import java.time.OffsetDateTime;
 

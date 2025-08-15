@@ -1,4 +1,4 @@
-package org.woftnw.DreamvisitorHub.pb;
+package org.woftnw.dreamvisitorhub.pb;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;

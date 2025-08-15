@@ -1,4 +1,4 @@
-package org.woftnw.DreamvisitorHub.util;
+package org.woftnw.dreamvisitorhub.util;
 
 public class UUIDFromater {
   /**

@@ -1,4 +1,4 @@
-package org.woftnw.DreamvisitorHub.util;
+package org.woftnw.dreamvisitorhub.util;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.woftnw.DreamvisitorHub.pb.PocketBase;
+import org.woftnw.dreamvisitorhub.pb.PocketBase;
 
 /**
  * Utility class for loading configuration from PocketBase
