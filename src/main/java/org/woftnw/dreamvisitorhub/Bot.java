@@ -6,8 +6,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.jetbrains.annotations.NotNull;
-import org.woftnw.dreamvisitorhub.commands.CommandManager;
-import org.woftnw.dreamvisitorhub.commands.ExecutableSlashCommand;
+import org.woftnw.dreamvisitorhub.commands.framework.CommandManager;
+import org.woftnw.dreamvisitorhub.commands.framework.ExecutableSlashCommand;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +20,7 @@ public class Bot {
 
     private static CommandManager commandManager;
     private static Guild guild;
+    private static JDA bot;
 
     public static void startBot(@NotNull Map<String, Object> config) throws InterruptedException {
         String token;
@@ -29,7 +30,7 @@ public class Bot {
             throw new RuntimeException(e);
         }
 
-        JDA bot = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT)
+        bot = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT)
                 .disableCache(
                         CacheFlag.VOICE_STATE,
                         CacheFlag.STICKER,
@@ -62,5 +63,14 @@ public class Bot {
      */
     public static Guild getGuild() {
         return guild;
+    }
+
+    /**
+     * Get the JDA instance.
+     * @return the {@link JDA} instance.
+     */
+    public static JDA getJda() {
+        if (bot == null) throw new NullPointerException("Bot has not been initialized.");
+        return bot;
     }
 }

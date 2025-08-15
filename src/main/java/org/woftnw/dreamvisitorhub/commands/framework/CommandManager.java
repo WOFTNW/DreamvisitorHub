@@ -1,4 +1,4 @@
-package org.woftnw.dreamvisitorhub.commands;
+package org.woftnw.dreamvisitorhub.commands.framework;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;

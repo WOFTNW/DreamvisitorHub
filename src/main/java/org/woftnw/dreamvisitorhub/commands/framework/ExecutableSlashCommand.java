@@ -1,4 +1,4 @@
-package org.woftnw.dreamvisitorhub.commands;
+package org.woftnw.dreamvisitorhub.commands.framework;
 
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
@@ -40,6 +40,10 @@ public abstract class ExecutableSlashCommand {
         } else {
             throw new IllegalArgumentException("This command doesn't match the given SlashCommandInteraction.");
         }
+    }
+
+    protected void noAutoComplete() {
+        throw new IllegalStateException("This command does not have autocomplete, but an autocompletion was called.");
     }
 
 }
