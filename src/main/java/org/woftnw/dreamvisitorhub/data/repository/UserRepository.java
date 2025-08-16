@@ -48,7 +48,7 @@ public interface UserRepository {
      * @param mcUsername Minecraft username
      * @return Optional containing the user if found
      */
-    Optional<DVUser> findByMcUsername(String mcUsername);
+    Optional<DVUser> findByMinecraftUsername(String mcUsername);
 
     /**
      * Get all users

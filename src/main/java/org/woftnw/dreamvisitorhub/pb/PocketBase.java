@@ -42,8 +42,8 @@ public class PocketBase {
      */
     @NotNull
     public static PocketBase fromConfig(@NotNull Map<String, Object> config) {
-        String baseUrl = (String) config.get("pocketbase-url");
-        String token = (String) config.get("pocketbase-token");
+        String baseUrl = (String) config.get("pocketbaseUrl");
+        String token = (String) config.get("pocketbaseToken");
         return new PocketBase(baseUrl, token);
     }
 

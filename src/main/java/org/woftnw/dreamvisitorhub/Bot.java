@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.jetbrains.annotations.NotNull;
+import org.woftnw.dreamvisitorhub.commands.CommandUser;
 import org.woftnw.dreamvisitorhub.commands.framework.CommandManager;
 import org.woftnw.dreamvisitorhub.commands.framework.ExecutableSlashCommand;
 import org.woftnw.dreamvisitorhub.commands.CommandActivity;
@@ -51,10 +52,7 @@ public class Bot {
             throw new RuntimeException(e);
         }
 
-        List<ExecutableSlashCommand> commands = new ArrayList<>();
-        commands.add(new CommandActivity());
-
-        commandManager = new CommandManager(guild, commands);
+        commandManager = new CommandManager(guild);
         bot.addEventListener(commandManager);
 
     }

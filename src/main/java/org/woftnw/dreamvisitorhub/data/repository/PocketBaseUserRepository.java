@@ -104,7 +104,7 @@ public class PocketBaseUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<DVUser> findByMcUsername(String mcUsername) {
+    public Optional<DVUser> findByMinecraftUsername(String mcUsername) {
         try {
             String filter = "mc_username = '" + mcUsername + "'";
             JsonObject record = pocketBase.getFirstListItem(COLLECTION_NAME, filter, null, null, null);
@@ -143,7 +143,7 @@ public class PocketBaseUserRepository implements UserRepository {
                 return mapToUser(newRecord);
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error saving user: " + user.getMcUsername(), e);
+            LOGGER.log(Level.SEVERE, "Error saving user: " + user.getMinecraftUsername(), e);
             throw new RuntimeException("Failed to save user", e);
         }
     }
@@ -191,11 +191,11 @@ public class PocketBaseUserRepository implements UserRepository {
             }
         }
 
-        if (user.getDiscord_id() != null) {
+        if (user.getDiscordId() != null) {
             try {
-                user.setSnowflakeId(Long.parseLong(user.getDiscord_id()));
+                user.setSnowflakeId(Long.parseLong(user.getDiscordId()));
             } catch (NumberFormatException e) {
-                LOGGER.warning("Discord ID is not a valid snowflake: " + user.getDiscord_id());
+                LOGGER.warning("Discord ID is not a valid snowflake: " + user.getDiscordId());
             }
         }
 
@@ -235,16 +235,16 @@ public class PocketBaseUserRepository implements UserRepository {
         JsonObject json = new JsonObject();
 
         // Only include fields that PocketBase expects for updates/creates
-        if (user.getDiscord_id() != null)
-            json.addProperty("discord_id", user.getDiscord_id());
-        if (user.getDiscord_username() != null)
-            json.addProperty("discord_username", user.getDiscord_username());
-        if (user.getDiscord_img() != null)
-            json.addProperty("discord_img", user.getDiscord_img());
-        if (user.getMcUsername() != null)
-            json.addProperty("mc_username", user.getMcUsername());
-        if (user.getMc_uuid() != null)
-            json.addProperty("mc_uuid", user.getMc_uuid().toString());
+        if (user.getDiscordId() != null)
+            json.addProperty("discord_id", user.getDiscordId());
+        if (user.getDiscordUsername() != null)
+            json.addProperty("discord_username", user.getDiscordUsername());
+        if (user.getDiscordAvatarUrl() != null)
+            json.addProperty("discord_img", user.getDiscordAvatarUrl());
+        if (user.getMinecraftUsername() != null)
+            json.addProperty("mc_username", user.getMinecraftUsername());
+        if (user.getMinecraftUuid() != null)
+            json.addProperty("mc_uuid", user.getMinecraftUuid().toString());
 
         // Add numeric fields
         if (user.getClaim_limit() != null)

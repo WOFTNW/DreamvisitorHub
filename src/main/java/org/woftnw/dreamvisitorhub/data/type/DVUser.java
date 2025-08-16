@@ -38,7 +38,7 @@ public class DVUser {
   private OffsetDateTime updated;
 
   // Existing getters and setters
-  public UUID getMc_uuid() {
+  public UUID getMinecraftUuid() {
     return mc_uuid;
   }
 
@@ -46,11 +46,11 @@ public class DVUser {
     return snowflakeId;
   }
 
-  public String getDiscord_username() {
+  public String getDiscordUsername() {
     return discord_username;
   }
 
-  public String getMcUsername() {
+  public String getMinecraftUsername() {
     return mcUsername;
   }
 
@@ -95,7 +95,7 @@ public class DVUser {
     this.collectionName = collectionName;
   }
 
-  public String getDiscord_id() {
+  public String getDiscordId() {
     return discord_id;
   }
 
@@ -103,7 +103,7 @@ public class DVUser {
     this.discord_id = discord_id;
   }
 
-  public String getDiscord_img() {
+  public String getDiscordAvatarUrl() {
     return discord_img;
   }
 
@@ -191,7 +191,7 @@ public class DVUser {
     this.last_work = last_work;
   }
 
-  public OffsetDateTime getLast_played() {
+  public OffsetDateTime getLastPlayed() {
     return last_played;
   }
 

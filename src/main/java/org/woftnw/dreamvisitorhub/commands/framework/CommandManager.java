@@ -6,6 +6,8 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.woftnw.dreamvisitorhub.commands.CommandActivity;
+import org.woftnw.dreamvisitorhub.commands.CommandUser;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -25,8 +27,16 @@ public class CommandManager extends ListenerAdapter {
     private final Guild guild;
     private final List<ExecutableSlashCommand> commands = new ArrayList<>();
 
-    public CommandManager(Guild guild, List<ExecutableSlashCommand> commands) {
+    public CommandManager(Guild guild) {
         this.guild = guild;
+
+        // !!!
+        // THIS IS WHERE TO ADD COMMANDS
+        // !!!
+        List<ExecutableSlashCommand> commands = new ArrayList<>();
+        commands.add(new CommandActivity());
+        commands.add(new CommandUser());
+
         this.commands.addAll(commands);
         registerAllCommands();
     }

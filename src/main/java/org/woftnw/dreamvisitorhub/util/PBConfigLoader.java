@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.woftnw.dreamvisitorhub.App;
 import org.woftnw.dreamvisitorhub.pb.PocketBase;
 
 /**
@@ -16,7 +17,6 @@ import org.woftnw.dreamvisitorhub.pb.PocketBase;
 public class PBConfigLoader {
     private static final Logger logger = Logger.getLogger("DreamvisitorHub");
     private static final String CONFIG_COLLECTION = "dreamvisitor_config";
-    private static final String CONFIG_RECORD_ID = "45q1at367581q3a"; // Default record ID
 
     private PBConfigLoader() {
         throw new IllegalStateException("Utility class");
@@ -31,8 +31,9 @@ public class PBConfigLoader {
     public static Map<String, Object> loadConfig(PocketBase pocketBase) {
         Map<String, Object> config = new HashMap<>();
         try {
+            String pocketbaseConfigId = (String) App.getConfig().get("pocketbaseConfigId");
             // Fetch the configuration record from PocketBase
-            JsonObject configData = pocketBase.getRecord(CONFIG_COLLECTION, CONFIG_RECORD_ID, null, null);
+            JsonObject configData = pocketBase.getRecord(CONFIG_COLLECTION, pocketbaseConfigId, null, null);
 
             // Convert JsonObject to Map
             for (String key : configData.keySet()) {
