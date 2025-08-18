@@ -4,15 +4,20 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.woftnw.dreamvisitorhub.data.repository.PocketBaseChatMessageRepository;
 
 import java.lang.reflect.Type;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Utility class for PocketBase operations
  */
 public class PocketBaseUtils {
+    private static final Logger LOGGER = Logger.getLogger(PocketBaseUtils.class.getName());
     private static final Gson gson = new Gson();
 
     /**
@@ -129,5 +134,57 @@ public class PocketBaseUtils {
             return null;
         JsonElement element = json.get(key);
         return element.isJsonObject() ? element.getAsJsonObject() : null;
+    }
+
+    /**
+     * Gets a OffsetDateTime value from JsonObject safely
+     *
+     * @param json JsonObject to get value from
+     * @param key  Key to lookup
+     * @return OffsetDateTime value or null if not found or not a OffsetDateTime
+     */
+    @Nullable
+    public static OffsetDateTime getOffsetDateTime(@NotNull JsonObject json, String key) {
+        if (json.has(key) && !json.get(key).isJsonNull()) {
+            try {
+                String dateStr = json.get(key).getAsString();
+
+                // Check if the string is empty or blank
+                if (dateStr == null || dateStr.trim().isEmpty()) {
+                    return null;
+                }
+
+                // Handle PocketBase date format "yyyy-MM-dd HH:mm:ss.SSSZ"
+                if (dateStr.contains(" ") && !dateStr.contains("T")) {
+                    // Replace space with 'T' to make it ISO-8601 compatible
+                    dateStr = dateStr.replace(" ", "T");
+                }
+
+                return OffsetDateTime.parse(dateStr);
+            } catch (Exception e) {
+                LOGGER.warning("Failed to parse date: " + json.get(key).getAsString() + " - " + e.getMessage());
+
+                // Try alternative parsing with explicit formatter
+                try {
+                    String dateStr = json.get(key).getAsString();
+
+                    // Check if the string is empty or blank
+                    if (dateStr == null || dateStr.trim().isEmpty()) {
+                        return null;
+                    }
+
+                    // Convert to ISO format for parsing
+                    if (dateStr.endsWith("Z")) {
+                        dateStr = dateStr.substring(0, dateStr.length() - 1) + "+0000";
+                    }
+
+                    return OffsetDateTime.parse(dateStr.replace(" ", "T"));
+                } catch (Exception ex) {
+                    LOGGER.warning("Alternative date parsing also failed: " + ex.getMessage());
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 }

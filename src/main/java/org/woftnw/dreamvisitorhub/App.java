@@ -1,19 +1,12 @@
 package org.woftnw.dreamvisitorhub;
 
-import org.woftnw.dreamvisitorhub.data.repository.PocketBaseItemRepository;
-import org.woftnw.dreamvisitorhub.data.repository.PocketBaseUserInventoryRepository;
-import org.woftnw.dreamvisitorhub.data.repository.PocketBaseUserRepository;
-import org.woftnw.dreamvisitorhub.data.repository.PocketBaseInfractionRepository;
-import org.woftnw.dreamvisitorhub.data.repository.PocketBaseAltRepository;
-import org.woftnw.dreamvisitorhub.data.repository.UserRepository;
-import org.woftnw.dreamvisitorhub.data.repository.ItemRepository;
-import org.woftnw.dreamvisitorhub.data.repository.UserInventoryRepository;
-import org.woftnw.dreamvisitorhub.data.repository.InfractionRepository;
-import org.woftnw.dreamvisitorhub.data.repository.AltRepository;
+import org.woftnw.dreamvisitorhub.config.Config;
+import org.woftnw.dreamvisitorhub.data.repository.*;
 import org.woftnw.dreamvisitorhub.pb.PocketBase;
 import org.woftnw.dreamvisitorhub.util.ConfigLoader;
 import org.woftnw.dreamvisitorhub.util.PBConfigLoader;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -29,8 +22,9 @@ public class App {
     private static UserInventoryRepository userInventoryRepository;
     private static InfractionRepository infractionRepository;
     private static AltRepository altRepository;
+    private static ChatMessagesRepository chatMessagesRepository;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
         logger.info("Starting DreamvisitorHub...");
 
         // First load minimal config to get PocketBase connection info
@@ -44,6 +38,7 @@ public class App {
         itemRepository = new PocketBaseItemRepository(pb);
         userInventoryRepository = new PocketBaseUserInventoryRepository(pb, userRepository, itemRepository);
         infractionRepository = new PocketBaseInfractionRepository(pb, userRepository);
+        chatMessagesRepository = new PocketBaseChatMessageRepository(pb);
 
         try {
             // Try to load configuration from PocketBase
@@ -68,6 +63,8 @@ public class App {
             logger.warning("Falling back to file-based configuration");
             config = initialConfig;
         }
+
+        Config.init(pb, (String) config.get("pocketbaseConfigId"));
 
         // Start the bot with the configuration
         Bot.startBot(config);
@@ -106,5 +103,9 @@ public class App {
             altRepository = new PocketBaseAltRepository(pb, getUserRepository());
         }
         return altRepository;
+    }
+
+    public static ChatMessagesRepository getChatMessageRepository() {
+        return chatMessagesRepository;
     }
 }
