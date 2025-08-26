@@ -54,7 +54,7 @@ public class DVUser {
     return mcUsername;
   }
 
-  public void setDiscord_username(String dcUsername) {
+  public void setDiscordUsername(String dcUsername) {
     this.discord_username = dcUsername;
   }
 
@@ -66,7 +66,7 @@ public class DVUser {
     this.snowflakeId = snowflakeId;
   }
 
-  public void setMc_uuid(UUID uuid) {
+  public void setMcUuid(UUID uuid) {
     this.mc_uuid = uuid;
   }
 
@@ -99,7 +99,7 @@ public class DVUser {
     return discord_id;
   }
 
-  public void setDiscord_id(String discord_id) {
+  public void setDiscordId(String discord_id) {
     this.discord_id = discord_id;
   }
 
@@ -107,7 +107,7 @@ public class DVUser {
     return discord_img;
   }
 
-  public void setDiscord_img(String discord_img) {
+  public void setDiscordImg(String discord_img) {
     this.discord_img = discord_img;
   }
 

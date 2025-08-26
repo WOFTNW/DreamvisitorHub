@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +26,19 @@ public class Mojang {
      */
     @NotNull
     public static UUID getUuidOfUsername(String username) throws IOException {
-        return UUID.fromString(getJSONObject("https://api.mojang.com/users/profiles/minecraft/" + username).get("id").getAsString());
+        return UUID.fromString(addHyphensToUuid(getJSONObject("https://api.mojang.com/users/profiles/minecraft/" + username).get("id").getAsString()));
+    }
+
+    /**
+     * Adds the hyphens back into a String UUID.
+     * @param uuid the UUID as a {@link String} without hyphens.
+     * @return a UUID as a string with hyphens.
+     */
+    @Contract(pure = true)
+    public static @NotNull String addHyphensToUuid(@NotNull String uuid) throws NullPointerException {
+        return uuid.replaceFirst(
+                "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)",
+                "$1-$2-$3-$4-$5");
     }
 
     /**

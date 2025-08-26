@@ -178,14 +178,14 @@ public class PocketBaseUserRepository implements UserRepository {
         user.setCollectionId(getStringOrNull(json, "collectionId"));
         user.setCollectionName(getStringOrNull(json, "collectionName"));
 
-        user.setDiscord_id(getStringOrNull(json, "discord_id"));
-        user.setDiscord_username(getStringOrNull(json, "discord_username"));
-        user.setDiscord_img(getStringOrNull(json, "discord_img"));
+        user.setDiscordId(getStringOrNull(json, "discord_id"));
+        user.setDiscordUsername(getStringOrNull(json, "discord_username"));
+        user.setDiscordImg(getStringOrNull(json, "discord_img"));
         user.setMcUsername(getStringOrNull(json, "mc_username"));
 
         if (json.has("mc_uuid") && !json.get("mc_uuid").isJsonNull()) {
             try {
-                user.setMc_uuid(UUID.fromString(UUIDFromater.formatUuid(json.get("mc_uuid").getAsString())));
+                user.setMcUuid(UUID.fromString(UUIDFromater.formatUuid(json.get("mc_uuid").getAsString())));
             } catch (IllegalArgumentException e) {
                 LOGGER.warning("Invalid UUID format: " + json.get("mc_uuid").getAsString());
             }
