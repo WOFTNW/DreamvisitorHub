@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.woftnw.dreamvisitorhub.commands.CommandActivity;
+import org.woftnw.dreamvisitorhub.commands.CommandBalance;
 import org.woftnw.dreamvisitorhub.commands.CommandLink;
 import org.woftnw.dreamvisitorhub.commands.CommandUser;
 
@@ -36,6 +37,7 @@ public class CommandManager extends ListenerAdapter {
         // !!!
         List<ExecutableSlashCommand> commands = new ArrayList<>();
         commands.add(new CommandActivity());
+        commands.add(new CommandBalance());
         commands.add(new CommandLink());
         commands.add(new CommandUser());
 

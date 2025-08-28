@@ -6,7 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.woftnw.dreamvisitorhub.data.type.DVUser;
 import org.woftnw.dreamvisitorhub.pb.PocketBase;
-import org.woftnw.dreamvisitorhub.util.UUIDFromater;
+import org.woftnw.dreamvisitorhub.util.Formatter;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -185,7 +185,7 @@ public class PocketBaseUserRepository implements UserRepository {
 
         if (json.has("mc_uuid") && !json.get("mc_uuid").isJsonNull()) {
             try {
-                user.setMcUuid(UUID.fromString(UUIDFromater.formatUuid(json.get("mc_uuid").getAsString())));
+                user.setMcUuid(UUID.fromString(Formatter.formatUuid(json.get("mc_uuid").getAsString())));
             } catch (IllegalArgumentException e) {
                 LOGGER.warning("Invalid UUID format: " + json.get("mc_uuid").getAsString());
             }

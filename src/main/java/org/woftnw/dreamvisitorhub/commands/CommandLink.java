@@ -58,7 +58,7 @@ public class CommandLink extends ExecutableSlashCommand {
             // Check if the Discord user and Minecraft user refer to different accounts
             if (!Objects.equals(targetDvUserFromDiscord.getId(), targetDvUserFromMinecraft.getId())) {
                 EmbedBuilder embed = new EmbedBuilder();
-                embed.setTitle("Two different records exist.").setDescription("Two different records exist for the Discord account and Minecraft account you are trying to connect. Delete one or both and try again.").setColor(Color.red)
+                embed.setTitle("Two different records exist").setDescription("Two different records exist for the Discord account and Minecraft account you are trying to connect. Delete one or both and try again.").setColor(Color.red)
                         .addField("Discord Target",
                                 "`" + targetDvUserFromDiscord.getMinecraftUsername() + "`" +
                                         "\n<@" + targetDvUserFromDiscord.getDiscordId() + ">",
