@@ -9,37 +9,37 @@ public class DVUser {
   private String collectionId;
   private String collectionName;
 
-  private UUID mc_uuid;
+  private UUID mcUuid;
   private String mcUsername;
-  private String discord_username;
-  private String discord_id;
-  private String discord_img;
+  private String discordUsername;
+  private String discordId;
+  private String discordImg;
   private Long snowflakeId;
 
   private List<String> infractions;
-  private List<String> users_home;
-  private List<String> inventory_items;
+  private List<String> usersHome;
+  private List<String> inventoryItems;
   private List<String> claims;
   private List<String> alts; // Added alts field
 
-  private Integer claim_limit;
-  private Integer play_time;
+  private Integer claimLimit;
+  private Integer playTime;
   private Double balance;
-  private Integer daily_streak;
+  private Integer dailyStreak;
 
-  private OffsetDateTime last_work;
-  private OffsetDateTime last_daily;
-  private OffsetDateTime last_played;
+  private OffsetDateTime lastWork;
+  private OffsetDateTime lastDaily;
+  private OffsetDateTime lastPlayed;
 
-  private Boolean is_suspended;
-  private Boolean is_banned;
+  private Boolean isSuspended;
+  private Boolean isBanned;
 
   private OffsetDateTime created;
   private OffsetDateTime updated;
 
   // Existing getters and setters
   public UUID getMinecraftUuid() {
-    return mc_uuid;
+    return mcUuid;
   }
 
   public Long getSnowflakeId() {
@@ -47,7 +47,7 @@ public class DVUser {
   }
 
   public String getDiscordUsername() {
-    return discord_username;
+    return discordUsername;
   }
 
   public String getMinecraftUsername() {
@@ -55,7 +55,7 @@ public class DVUser {
   }
 
   public void setDiscordUsername(String dcUsername) {
-    this.discord_username = dcUsername;
+    this.discordUsername = dcUsername;
   }
 
   public void setMcUsername(String mcUsername) {
@@ -67,7 +67,7 @@ public class DVUser {
   }
 
   public void setMcUuid(UUID uuid) {
-    this.mc_uuid = uuid;
+    this.mcUuid = uuid;
   }
 
   // New getters and setters
@@ -96,19 +96,19 @@ public class DVUser {
   }
 
   public String getDiscordId() {
-    return discord_id;
+    return discordId;
   }
 
   public void setDiscordId(String discord_id) {
-    this.discord_id = discord_id;
+    this.discordId = discord_id;
   }
 
   public String getDiscordAvatarUrl() {
-    return discord_img;
+    return discordImg;
   }
 
   public void setDiscordImg(String discord_img) {
-    this.discord_img = discord_img;
+    this.discordImg = discord_img;
   }
 
   public List<String> getInfractions() {
@@ -119,20 +119,20 @@ public class DVUser {
     this.infractions = infractions;
   }
 
-  public List<String> getUsers_home() {
-    return users_home;
+  public List<String> getUsersHome() {
+    return usersHome;
   }
 
-  public void setUsers_home(List<String> users_home) {
-    this.users_home = users_home;
+  public void setUsersHome(List<String> usersHome) {
+    this.usersHome = usersHome;
   }
 
-  public List<String> getInventory_items() {
-    return inventory_items;
+  public List<String> getInventoryItems() {
+    return inventoryItems;
   }
 
-  public void setInventory_items(List<String> inventory_items) {
-    this.inventory_items = inventory_items;
+  public void setInventoryItems(List<String> inventoryItems) {
+    this.inventoryItems = inventoryItems;
   }
 
   public List<String> getClaims() {
@@ -151,20 +151,20 @@ public class DVUser {
     this.alts = alts;
   }
 
-  public Integer getClaim_limit() {
-    return claim_limit;
+  public Integer getClaimLimit() {
+    return claimLimit;
   }
 
-  public void setClaim_limit(Integer claim_limit) {
-    this.claim_limit = claim_limit;
+  public void setClaimLimit(Integer claimLimit) {
+    this.claimLimit = claimLimit;
   }
 
-  public Integer getPlay_time() {
-    return play_time;
+  public Integer getPlayTime() {
+    return playTime;
   }
 
-  public void setPlay_time(Integer play_time) {
-    this.play_time = play_time;
+  public void setPlayTime(Integer playTime) {
+    this.playTime = playTime;
   }
 
   public Double getBalance() {
@@ -175,48 +175,48 @@ public class DVUser {
     this.balance = balance;
   }
 
-  public Integer getDaily_streak() {
-    return daily_streak;
+  public Integer getDailyStreak() {
+    return dailyStreak;
   }
 
-  public void setDaily_streak(Integer daily_streak) {
-    this.daily_streak = daily_streak;
+  public void setDailyStreak(Integer daily_streak) {
+    this.dailyStreak = daily_streak;
   }
 
-  public OffsetDateTime getLast_work() {
-    return last_work;
+  public OffsetDateTime getLastWork() {
+    return lastWork;
   }
 
-  public void setLast_work(OffsetDateTime last_work) {
-    this.last_work = last_work;
+  public void setLastWork(OffsetDateTime lastWork) {
+    this.lastWork = lastWork;
   }
 
   public OffsetDateTime getLastPlayed() {
-    return last_played;
+    return lastPlayed;
   }
 
-  public OffsetDateTime getLast_daily() {
-    return last_daily;
+  public OffsetDateTime getLastDaily() {
+    return lastDaily;
   }
 
-  public void setLast_daily(OffsetDateTime last_daily) {
-    this.last_daily = last_daily;
+  public void setLastDaily(OffsetDateTime lastDaily) {
+    this.lastDaily = lastDaily;
   }
 
-  public Boolean getIs_suspended() {
-    return is_suspended;
+  public Boolean getIsSuspended() {
+    return isSuspended;
   }
 
-  public void setIs_suspended(Boolean is_suspended) {
-    this.is_suspended = is_suspended;
+  public void setIsSuspended(Boolean isSuspended) {
+    this.isSuspended = isSuspended;
   }
 
-  public Boolean getIs_banned() {
-    return is_banned;
+  public Boolean getIsBanned() {
+    return isBanned;
   }
 
-  public void setIs_banned(Boolean is_banned) {
-    this.is_banned = is_banned;
+  public void setIsBanned(Boolean isBanned) {
+    this.isBanned = isBanned;
   }
 
   public OffsetDateTime getCreated() {
@@ -235,7 +235,7 @@ public class DVUser {
     this.updated = updated;
   }
 
-  public void setLast_Played(OffsetDateTime last_played) {
-    this.last_played = last_played;
+  public void setLastPlayed(OffsetDateTime last_played) {
+    this.lastPlayed = last_played;
   }
 }

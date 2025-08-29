@@ -201,24 +201,24 @@ public class PocketBaseUserRepository implements UserRepository {
 
         // Parse relation lists
         user.setInfractions(getStringListOrEmpty(json, "infractions"));
-        user.setUsers_home(getStringListOrEmpty(json, "users_home"));
-        user.setInventory_items(getStringListOrEmpty(json, "inventory_items"));
+        user.setUsersHome(getStringListOrEmpty(json, "users_home"));
+        user.setInventoryItems(getStringListOrEmpty(json, "inventory_items"));
         user.setClaims(getStringListOrEmpty(json, "claims"));
 
         // Parse numeric fields
-        user.setClaim_limit(getIntOrNull(json, "claim_limit"));
-        user.setPlay_time(getIntOrNull(json, "play_time"));
+        user.setClaimLimit(getIntOrNull(json, "claim_limit"));
+        user.setPlayTime(getIntOrNull(json, "play_time"));
         user.setBalance(getDoubleOrNull(json, "balance"));
-        user.setDaily_streak(getIntOrNull(json, "daily_streak"));
+        user.setDailyStreak(getIntOrNull(json, "daily_streak"));
 
         // Parse boolean fields
-        user.setIs_suspended(getBooleanOrNull(json, "is_suspended"));
-        user.setIs_banned(getBooleanOrNull(json, "is_banned"));
+        user.setIsSuspended(getBooleanOrNull(json, "is_suspended"));
+        user.setIsBanned(getBooleanOrNull(json, "is_banned"));
 
         // Parse datetime fields
-        user.setLast_work(getOffsetDateTimeOrNull(json, "last_work"));
-        user.setLast_Played(getOffsetDateTimeOrNull(json, "last_played"));
-        user.setLast_daily(getOffsetDateTimeOrNull(json, "last_daily"));
+        user.setLastWork(getOffsetDateTimeOrNull(json, "last_work"));
+        user.setLastPlayed(getOffsetDateTimeOrNull(json, "last_played"));
+        user.setLastDaily(getOffsetDateTimeOrNull(json, "last_daily"));
         user.setCreated(getOffsetDateTimeOrNull(json, "created"));
         user.setUpdated(getOffsetDateTimeOrNull(json, "updated"));
 
@@ -247,26 +247,26 @@ public class PocketBaseUserRepository implements UserRepository {
             json.addProperty("mc_uuid", user.getMinecraftUuid().toString());
 
         // Add numeric fields
-        if (user.getClaim_limit() != null)
-            json.addProperty("claim_limit", user.getClaim_limit());
-        if (user.getPlay_time() != null)
-            json.addProperty("play_time", user.getPlay_time());
+        if (user.getClaimLimit() != null)
+            json.addProperty("claim_limit", user.getClaimLimit());
+        if (user.getPlayTime() != null)
+            json.addProperty("play_time", user.getPlayTime());
         if (user.getBalance() != null)
             json.addProperty("balance", user.getBalance());
-        if (user.getDaily_streak() != null)
-            json.addProperty("daily_streak", user.getDaily_streak());
+        if (user.getDailyStreak() != null)
+            json.addProperty("daily_streak", user.getDailyStreak());
 
         // Add boolean fields
-        if (user.getIs_suspended() != null)
-            json.addProperty("is_suspended", user.getIs_suspended());
-        if (user.getIs_banned() != null)
-            json.addProperty("is_banned", user.getIs_banned());
+        if (user.getIsSuspended() != null)
+            json.addProperty("is_suspended", user.getIsSuspended());
+        if (user.getIsBanned() != null)
+            json.addProperty("is_banned", user.getIsBanned());
 
         // Format and add datetime fields
-        if (user.getLast_work() != null)
-            json.addProperty("last_work", formatDateTime(user.getLast_work()));
-        if (user.getLast_daily() != null)
-            json.addProperty("last_daily", formatDateTime(user.getLast_daily()));
+        if (user.getLastWork() != null)
+            json.addProperty("last_work", formatDateTime(user.getLastWork()));
+        if (user.getLastDaily() != null)
+            json.addProperty("last_daily", formatDateTime(user.getLastDaily()));
 
         // Add relation fields (these need to be handled separately based on
         // PocketBase's expectations)
